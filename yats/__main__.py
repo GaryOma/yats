@@ -5,7 +5,8 @@ import argparse
 
 from yats.connector import Connector
 
-if __name__ == "__main__":
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--username",
                         "-u",
@@ -20,3 +21,7 @@ if __name__ == "__main__":
     profile = con.profile(args.username)
     profile.describe()
     con.get_tweets_user(args.username, thread_nb=args.thread)
+
+
+if __name__ == "__main__":
+    main()

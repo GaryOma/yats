@@ -1,6 +1,6 @@
 
-from src.sorted_set import SortedSet
-from src.tweet import Tweet
+from yats.sorted_set import SortedSet
+from yats.tweet import Tweet
 
 
 class TweetSet(SortedSet):

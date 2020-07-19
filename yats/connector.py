@@ -5,11 +5,11 @@ from multiprocessing import Manager
 from multiprocessing.pool import ThreadPool
 from functools import partial
 
-from src.custom_datetime import CustomDateTime as datetime
-from src.twitter_request import TwitterRequest
-from src.profile import Profile
-from src.tweet_set import TweetSet
-from src.requests_holder import RequestsHolder
+from yats.custom_datetime import CustomDateTime as datetime
+from yats.twitter_request import TwitterRequest
+from yats.profile import Profile
+from yats.tweet_set import TweetSet
+from yats.requests_holder import RequestsHolder
 
 TWITTER_CREATION_DATE = datetime(2006, 3, 21)
 # COUNT_QUERY = 1000

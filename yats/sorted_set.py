@@ -4,9 +4,9 @@ import json
 import csv
 import re
 
-from src.serie import Serie
-from src.sorted_element import SortedElement
-from src.custom_datetime import CustomDateTime as datetime
+from yats.serie import Serie
+from yats.sorted_element import SortedElement
+from yats.custom_datetime import CustomDateTime as datetime
 
 
 class SortedSet:

@@ -1,7 +1,7 @@
 import sys
 
-from src.custom_datetime import CustomDateTime as datetime
-from src.sorted_element import SortedElement
+from yats.custom_datetime import CustomDateTime as datetime
+from yats.sorted_element import SortedElement
 SORT_KEYS = ["creation"]
 
 

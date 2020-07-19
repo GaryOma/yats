@@ -2,7 +2,7 @@ import re
 import sys
 import logging
 
-from src.request import Request
+from yats.request import Request
 
 TWITTER_URL = "https://mobile.twitter.com/"
 GRAPHQL_URL = "https://api.twitter.com/graphql/"

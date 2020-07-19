@@ -1,4 +1,4 @@
-from src.custom_datetime import CustomDateTime as datetime
+from yats.custom_datetime import CustomDateTime as datetime
 
 SUPPORTED_TYPES = (str, datetime, int, bool)
 

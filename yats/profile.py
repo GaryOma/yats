@@ -1,6 +1,6 @@
 import logging
 
-from src.custom_datetime import CustomDateTime as datetime
+from yats.custom_datetime import CustomDateTime as datetime
 
 
 class Profile:

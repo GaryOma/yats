@@ -19,8 +19,7 @@ COUNT_QUERY = 20
 class Connector:
 
     def __init__(self, fast_mode=True):
-        logging.basicConfig(level=logging.DEBUG,
-                            format=('%(message)s'))
+        pass
 
     def profile(self, name, request=None):
         request = TwitterRequest() if request is None else request

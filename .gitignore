@@ -1,1 +1,4 @@
 /*.ipynb
+/build/
+/dist/
+/yats.egg-info/

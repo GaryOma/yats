@@ -84,8 +84,8 @@ class Connector:
             query = query[:-1]
         return query
 
-    def _create_payload(self, query, count=COUNT_QUERY):
-        return {
+    def _create_payload(self, query=None, user_id=None, count=COUNT_QUERY):
+        payload = {
             "include_profile_interstitial_type": "1",
             "include_blocking": "1",
             "include_blocked_by": "1",
@@ -107,13 +107,17 @@ class Connector:
             "include_ext_media_availability": "true",
             "send_error_codes": "true",
             "simple_quoted_tweet": "true",
-            "q": query,
             "count": count,
             "query_source": "typed_query",
             "pc": "1",
             "spelling_corrections": "1",
             "ext": "mediaStats,highlightedLabel"
         }
+        if query is not None:
+            payload["q"] = query
+        if user_id is not None:
+            payload["userId"] = user_id
+        return payload
 
     def _extract_since_until_from_q(self, q):
         until = None
@@ -148,6 +152,8 @@ class Connector:
             data, cursor = request.get_tweets_request(payload)
             new_tweets = TweetSet(data)
             tweets.add(new_tweets)
+            logging.debug(f"total : {len(tweets)} "
+                          f"Fetches {len(new_tweets)} tweets")
             payload["cursor"] = cursor
             last_inserted = len(new_tweets)
         with lock:
@@ -176,7 +182,7 @@ class Connector:
                                        since=beg_date,
                                        until=end_date,
                                        **args)
-            payload = self._create_payload(query)
+            payload = self._create_payload(query=query)
             yield payload
             beg_date = end_date
             end_date += timedelta(days=1)
@@ -185,10 +191,10 @@ class Connector:
                                thread_nb=20,
                                **args):
         manager = Manager()
+        lock = manager.Lock()
         requests = RequestsHolder()
         for _ in range(thread_nb):
             requests.push(TwitterRequest())
-        lock = manager.Lock()
         tweets = TweetSet()
         with ThreadPool(thread_nb) as p:
             for new_tweets in p.imap_unordered(
@@ -198,8 +204,21 @@ class Connector:
                 logging.debug(f"TOTAL {len(tweets)}, NEW {len(new_tweets)}")
         return tweets
 
+    def get_tweets_timeline(self, username, user_id=None):
+        if user_id is None:
+            request = TwitterRequest()
+            profile = self.profile(username, request)
+            user_id = profile.restid
+            logging.debug(f"Getting {profile.name}'s timeline tweets...")
+        requests = RequestsHolder()
+        requests.push(TwitterRequest())
+        payload = self._create_payload(user_id=user_id)
+        manager = Manager()
+        lock = manager.Lock()
+        tweets = self._tweet_worker(requests, lock, payload)
+        return tweets
+
     def get_tweets_user(self, username, since=None, **args):
-        request = None
         if since is not None:
             beg_date = since
         else:

@@ -24,6 +24,8 @@ class TwitterRequest(Request):
             self.graphql_ext = USER_INFO_QL_ID
             self.token_bearer = TOKEN_BEARER
         self.token_guest = None
+        self.url_timeline = "https://api.twitter.com/2/timeline/profile/"
+        self.url_search = "https://api.twitter.com/2/search/adaptive.json"
         super().__init__()
 
     def _is_unset(self, attributes):
@@ -66,7 +68,7 @@ class TwitterRequest(Request):
         for instruction in instructions:
             if "addEntries" in instruction.keys():
                 for entry in instruction["addEntries"]["entries"]:
-                    if entry["entryId"] == "sq-cursor-bottom":
+                    if "cursor-bottom" in entry["entryId"]:
                         content = entry["content"]
                         cursor = content["operation"]["cursor"]["value"]
                         return cursor
@@ -103,7 +105,11 @@ class TwitterRequest(Request):
             "x-csrf-token": "dbfeef183c6a3f1f4f1609aa22f3b378",
             "x-guest-token": self.token_guest
         }
-        self.get("https://api.twitter.com/2/search/adaptive.json",
+        if "userId" in payload.keys():
+            url = f"{self.url_timeline}{payload['userId']}.json"
+        elif "q" in payload.keys():
+            url = self.url_search
+        self.get(url,
                  params=payload,
                  headers=headers)
         data = self.body["globalObjects"]

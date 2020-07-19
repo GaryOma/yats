@@ -1,21 +1,17 @@
 import urllib
+import logging
 import http.client
 import json
+import socket
 import re
-import ssl
-import copyreg
-# from multiprocessing.reduction import rebuild_socket, reduce_socket
+
+DEFAULT_TIMEOUT = 5
 
 
 class Request:
 
     def __init__(self):
-        # copyreg.pickle(ssl.SSLSocket, reduce_socket, rebuild_socket)
-        copyreg.pickle(ssl.SSLContext, self._save_sslcontext)
         pass
-
-    def _save_sslcontext(obj):
-        return obj.__class__, (obj.protocol,)
 
     def _parse_content_type(self, c_type):
         res = re.match(r"(?P<type>\w+?)\/(?P<app>\w+?);"
@@ -34,22 +30,41 @@ class Request:
         try:
             self.https.host = host
         except AttributeError:
-            self.https = http.client.HTTPSConnection(host)
-        try:
-            self.https.request(type, path, headers=headers)
-        except http.client.CannotSendRequest:
-            print("Cannot send request, refreshing connection")
-            self.https = http.client.HTTPSConnection(host)
-            self.https.request(type, path, headers=headers)
-        # parse the response
-        response = self.https.getresponse()
-        # print("RESPONSE STATUS", response.status)
-        content_type = self._parse_content_type(
-            response.getheader("content-type")
-        )
-        self.response = response
-        self.headers = response.getheaders()
-        self.body = self._parse_body(response.read(), content_type)
+            self.https = http.client.HTTPSConnection(host,
+                                                     timeout=DEFAULT_TIMEOUT)
+        self.body = None
+        while self.body is None:
+            try:
+                self.https.request(type, path, headers=headers)
+            except http.client.CannotSendRequest:
+                print("Cannot send request, refreshing connection")
+                self.https = http.client.HTTPSConnection(
+                    host,
+                    timeout=DEFAULT_TIMEOUT)
+                self.https.request(type, path, headers=headers)
+            # parse the response
+            try:
+                response = self.https.getresponse()
+            except socket.timeout:
+                logging.error("TIMEOUT WHILE READING RESPONSE, REFRESHING")
+                self.https = http.client.HTTPSConnection(
+                    host,
+                    timeout=DEFAULT_TIMEOUT)
+                continue
+            # print("RESPONSE STATUS", response.status)
+            content_type = self._parse_content_type(
+                response.getheader("content-type")
+            )
+            self.response = response
+            self.headers = response.getheaders()
+            try:
+                self.body = self._parse_body(response.read(), content_type)
+            except socket.timeout:
+                logging.error("TIMEOUT WHILE READING BODY, REFRESHING")
+                self.https = http.client.HTTPSConnection(
+                    host,
+                    timeout=DEFAULT_TIMEOUT)
+                continue
 
     def get(self, url, params=None, headers={}):
         url_parsed = urllib.parse.urlparse(url)

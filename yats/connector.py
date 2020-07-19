@@ -145,26 +145,24 @@ class Connector:
         if "q" in payload.keys():
             logging.debug(payload["q"])
         bypass_cooldown = 0
+        last_inserted = 1
         tweets = TweetSet()
-        data, cursor = request.get_tweets_request(payload)
-        new_tweets = TweetSet(data)
-        tweets.add(new_tweets)
-        payload["cursor"] = cursor
-        last_inserted = len(new_tweets)
         while last_inserted > 0:
-            data, cursor = request.get_tweets_request(payload)
+            try:
+                data, cursor = request.get_tweets_request(payload)
+            except TypeError:
+                request.to_file("error_request.json")
+                exit(0)
             new_tweets = TweetSet(data)
             tweets.add(new_tweets)
-            logging.debug(f"total : {len(tweets)} "
-                          f"Fetches {len(new_tweets)} tweets")
+            # logging.debug(f"total : {len(tweets)} "
+            #               f"Fetches {len(new_tweets)} tweets")
             payload["cursor"] = cursor
             last_inserted = len(new_tweets)
             if last_inserted < 5:
                 bypass_cooldown += 1
             if bypass_cooldown >= 2:
                 break
-                # request.to_file("request.json")
-                # request = TwitterRequest()
         with lock:
             requests.push(request)
         return tweets

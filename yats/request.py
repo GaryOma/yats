@@ -61,3 +61,10 @@ class Request:
 
     def header(self, name):
         return self.response.getheader(name)
+
+    def to_file(self, file_name):
+        with open(file_name, "w") as outfile:
+            json.dump({
+                "headers": self.headers,
+                "body": self.body
+            }, outfile, indent=4)

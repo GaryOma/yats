@@ -85,6 +85,19 @@ class TwitterRequest(Request):
             sys.exit(0)
         return cursor
 
+    def get(self, url, params=None, headers={}):
+        super().get(url, params, headers)
+        rate_limit_header = self.header("x-rate-limit-remaining")
+        if rate_limit_header is None:
+            return
+        rate_limit = int(rate_limit_header)
+        if rate_limit == 0:
+            print("ur' fucked")
+        elif rate_limit < 10:
+            logging.warning(f"WARNING, rate-limit = {rate_limit}")
+            logging.warning("Refreshing now")
+            self._get_initial_request()
+
     def get_profile_request(self, username):
         self._get_connection_infos()
         user_url = GRAPHQL_URL + self.graphql_ext + "/" + USER_INFO_QL_PATH
@@ -102,7 +115,7 @@ class TwitterRequest(Request):
         self._get_connection_infos()
         headers = {
             "authorization": f"Bearer {self.token_bearer}",
-            "x-csrf-token": "dbfeef183c6a3f1f4f1609aa22f3b378",
+            "x-csrf-token": "dbfeef183c6a3f1f4f1609aa22f3b379",
             "x-guest-token": self.token_guest
         }
         if "userId" in payload.keys():
@@ -114,9 +127,4 @@ class TwitterRequest(Request):
                  headers=headers)
         data = self.body["globalObjects"]
         cursor = self._get_cursor(self.body["timeline"])
-        rate_limit = int(self.header("x-rate-limit-remaining"))
-        if rate_limit < 10:
-            logging.warning(f"WARNING, rate-limit = {rate_limit}")
-            logging.warning("Refreshing now")
-            self._get_initial_request()
         return data, cursor

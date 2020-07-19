@@ -142,6 +142,9 @@ class Connector:
                 request = requests.pop()
             else:
                 request = TwitterRequest()
+        if "q" in payload.keys():
+            logging.debug(payload["q"])
+        bypass_cooldown = 0
         tweets = TweetSet()
         data, cursor = request.get_tweets_request(payload)
         new_tweets = TweetSet(data)
@@ -156,6 +159,12 @@ class Connector:
                           f"Fetches {len(new_tweets)} tweets")
             payload["cursor"] = cursor
             last_inserted = len(new_tweets)
+            if last_inserted < 5:
+                bypass_cooldown += 1
+            if bypass_cooldown >= 2:
+                break
+                # request.to_file("request.json")
+                # request = TwitterRequest()
         with lock:
             requests.push(request)
         return tweets
@@ -187,16 +196,16 @@ class Connector:
             beg_date = end_date
             end_date += timedelta(days=1)
 
-    def get_all_tweets_request(self,
-                               thread_nb=20,
-                               **args):
+    def get_tweets_request(self,
+                           thread=20,
+                           **args):
         manager = Manager()
         lock = manager.Lock()
         requests = RequestsHolder()
-        for _ in range(thread_nb):
+        for _ in range(thread):
             requests.push(TwitterRequest())
         tweets = TweetSet()
-        with ThreadPool(thread_nb) as p:
+        with ThreadPool(thread) as p:
             for new_tweets in p.imap_unordered(
                     partial(self._tweet_worker, requests, lock),
                     self._payload_generator(**args)):
@@ -225,10 +234,19 @@ class Connector:
             request = TwitterRequest()
             profile = self.profile(username, request)
             beg_date = profile.creation
+            print(beg_date)
             logging.debug(f"Getting {profile.name}'s all tweets...")
-        username = "@"+username if username[0] != "@" else ""
-        tweets = self.get_all_tweets_request(from_account=username,
-                                             since=beg_date,
-                                             filter_replies=True,
-                                             **args)
+        tweets = self.get_tweets_request(from_account=username,
+                                         since=beg_date,
+                                         filter_replies=True,
+                                         **args)
+        return tweets
+
+    def request(self, query, **args):
+        user_query = re.search(r"^@(\S+)$", query)
+        if user_query:
+            username = user_query.group(1)
+            tweets = self.get_tweets_user(username=username, **args)
+        else:
+            tweets = self.get_tweets_request(q=query, **args)
         return tweets

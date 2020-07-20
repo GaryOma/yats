@@ -136,8 +136,8 @@ class Connector:
             q = re.sub(regex, "", q)
         return since, until, q
 
-    def _tweet_worker(self, requests, lock, task_queue, payload,
-                      limit_cooldown):
+    def _tweet_worker(self, requests, lock, task_queue, limit_cooldown,
+                      payload):
         with lock:
             if len(requests) > 0:
                 request = requests.pop()
@@ -155,7 +155,7 @@ class Connector:
         # logging.debug(f"total : {len(tweets)} "
         #               f"Fetches {len(new_tweets)} tweets")
         last_inserted = len(new_tweets)
-        if last_inserted > 5:
+        if last_inserted > limit_cooldown:
             payload["cursor"] = cursor
             task_queue.put(payload)
         with lock:

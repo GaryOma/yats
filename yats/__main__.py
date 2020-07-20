@@ -15,6 +15,8 @@ def main():
     parser.add_argument("--thread", "-t", type=int, default=10)
     parser.add_argument("--timeline", "-tl", action="store_true")
     parser.add_argument("--output", "-o", type=str, default="/tmp/tweets.json")
+    parser.add_argument("--limit-cooldown", "-lc", type=int,
+                        default=5)
     con = Connector()
     args = parser.parse_args()
     print(args)
@@ -22,7 +24,7 @@ def main():
         tweets = con.get_tweets_timeline(args.query)
     else:
         query = args.query
-        query_list = ["thread"]
+        query_list = ["thread", "limit_cooldown"]
         query_args = {}
         for arg in query_list:
             query_args[arg] = vars(args)[arg]

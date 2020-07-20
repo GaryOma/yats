@@ -1,7 +1,6 @@
 import re
 import sys
 import logging
-import urllib
 
 from yats.request import Request
 
@@ -39,8 +38,8 @@ class TwitterRequest(Request):
             return not hasattr(self, attribute) or attribute is None
 
     def _get_initial_request(self):
-        logging.debug("Getting the token_guest and main_js...")
-        logging.debug(f"  get initial request {TWITTER_URL}")
+        logging.error("Getting the token_guest and main_js...")
+        logging.error(f"  get initial request {TWITTER_URL}")
         self.get(TWITTER_URL, headers=USER_AGENT)
         self.token_guest = re.search(r"gt=(\w+)",
                                      self.body).group(1)
@@ -86,19 +85,6 @@ class TwitterRequest(Request):
             sys.exit(0)
         return cursor
 
-    def get(self, url, params=None, headers={}):
-        super().get(url, params, headers)
-        rate_limit_header = self.header("x-rate-limit-remaining")
-        if rate_limit_header is None:
-            return
-        rate_limit = int(rate_limit_header)
-        if rate_limit == 0:
-            print("ur' fucked")
-        elif rate_limit < 10:
-            logging.warning(f"WARNING, rate-limit = {rate_limit}")
-            logging.warning("Refreshing now")
-            self._get_initial_request()
-
     def get_profile_request(self, username):
         self._get_connection_infos()
         user_url = GRAPHQL_URL + self.graphql_ext + "/" + USER_INFO_QL_PATH
@@ -128,4 +114,14 @@ class TwitterRequest(Request):
                  headers=headers)
         data = self.body["globalObjects"]
         cursor = self._get_cursor(self.body["timeline"])
+        rate_limit_header = self.header("x-rate-limit-remaining")
+        if rate_limit_header is None:
+            return
+        rate_limit = int(rate_limit_header)
+        if rate_limit == 0:
+            print("ur' fucked")
+        elif rate_limit < 10:
+            logging.info(f"WARNING, rate-limit = {rate_limit}")
+            logging.info("Refreshing now")
+            self._get_initial_request()
         return data, cursor

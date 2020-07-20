@@ -30,26 +30,26 @@ class Request:
         try:
             self.https.host = host
         except AttributeError:
-            self.https = http.client.HTTPSConnection(host,
-                                                     timeout=DEFAULT_TIMEOUT)
+            logging.error("ATTRIBUTE ERROR, RECREATING")
+            self.recreate_connection(host)
         self.body = None
         while self.body is None:
             try:
                 self.https.request(type, path, headers=headers)
             except http.client.CannotSendRequest:
                 print("Cannot send request, refreshing connection")
-                self.refresh(host)
+                self.recreate_connection(host)
                 continue
             except socket.timeout:
                 logging.error("TIMEOUT WHILE SENDING REQUEST, REFRESHING")
-                self.refresh(host)
+                self.recreate_connection(host)
                 continue
             # parse the response
             try:
                 response = self.https.getresponse()
             except socket.timeout:
                 logging.error("TIMEOUT WHILE READING RESPONSE, REFRESHING")
-                self.refresh(host)
+                self.recreate_connection(host)
                 continue
             # print("RESPONSE STATUS", response.status)
             content_type = self._parse_content_type(
@@ -60,13 +60,14 @@ class Request:
             try:
                 self.body = self._parse_body(response.read(), content_type)
             except socket.timeout:
-                self.refresh(host)
+                self.recreate_connection(host)
                 logging.error("TIMEOUT WHILE READING BODY, REFRESHING")
                 continue
 
-    def refresh(self, host):
+    def recreate_connection(self, host):
+        url_parsed = urllib.parse.urlparse(host)
         self.https = http.client.HTTPSConnection(
-            host,
+            url_parsed.path,
             timeout=DEFAULT_TIMEOUT)
 
     def get(self, url, params=None, headers={}):

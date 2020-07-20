@@ -112,14 +112,6 @@ class TwitterRequest(Request):
         }
         self.get(user_url, headers=headers, params=payload)
 
-    def refresh(self, payload):
-        if "userId" in payload.keys():
-            url = f"{self.url_timeline}{payload['userId']}.json"
-        elif "q" in payload.keys():
-            url = self.url_search
-        url_parsed = urllib.parse.urlparse(url)
-        super().refresh(url_parsed.netloc)
-
     def get_tweets_request(self, payload):
         self._get_connection_infos()
         headers = {

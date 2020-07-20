@@ -124,14 +124,14 @@ class Connector:
         regex = r"until:(\d{4}-\d{2}-\d{2})"
         se = re.search(regex, q)
         if se:
-            until = (datetime.strptime(se.group(1), "%Y-%M-%d")
+            until = (datetime.strptime(se.group(1), "%Y-%m-%d")
                      .replace(tzinfo=timezone.utc))
             q = re.sub(regex, "", q)
         since = None
         regex = r"since:(\d{4}-\d{2}-\d{2})"
         se = re.search(regex, q)
         if se:
-            since = (datetime.strptime(se.group(1), "%Y-%M-%d")
+            since = (datetime.strptime(se.group(1), "%Y-%m-%d")
                      .replace(tzinfo=timezone.utc))
             q = re.sub(regex, "", q)
         return since, until, q

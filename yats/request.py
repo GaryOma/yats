@@ -41,15 +41,17 @@ class Request:
                 self.https = http.client.HTTPSConnection(
                     host,
                     timeout=DEFAULT_TIMEOUT)
-                self.https.request(type, path, headers=headers)
+                continue
+            except socket.timeout:
+                logging.error("TIMEOUT WHILE SENDING REQUEST, REFRESHING")
+                self.refresh(host)
+                continue
             # parse the response
             try:
                 response = self.https.getresponse()
             except socket.timeout:
                 logging.error("TIMEOUT WHILE READING RESPONSE, REFRESHING")
-                self.https = http.client.HTTPSConnection(
-                    host,
-                    timeout=DEFAULT_TIMEOUT)
+                self.refresh(host)
                 continue
             # print("RESPONSE STATUS", response.status)
             content_type = self._parse_content_type(
@@ -60,11 +62,14 @@ class Request:
             try:
                 self.body = self._parse_body(response.read(), content_type)
             except socket.timeout:
+                self.refresh(host)
                 logging.error("TIMEOUT WHILE READING BODY, REFRESHING")
-                self.https = http.client.HTTPSConnection(
-                    host,
-                    timeout=DEFAULT_TIMEOUT)
                 continue
+
+    def refresh(self, host):
+        self.https = http.client.HTTPSConnection(
+            host,
+            timeout=DEFAULT_TIMEOUT)
 
     def get(self, url, params=None, headers={}):
         url_parsed = urllib.parse.urlparse(url)

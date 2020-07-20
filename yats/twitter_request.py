@@ -38,8 +38,8 @@ class TwitterRequest(Request):
             return not hasattr(self, attribute) or attribute is None
 
     def _get_initial_request(self):
-        logging.error("Getting the token_guest and main_js...")
-        logging.error(f"  get initial request {TWITTER_URL}")
+        logging.debug("Getting the token_guest and main_js...")
+        logging.debug(f"  get initial request {TWITTER_URL}")
         self.get(TWITTER_URL, headers=USER_AGENT)
         self.token_guest = re.search(r"gt=(\w+)",
                                      self.body).group(1)

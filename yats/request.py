@@ -30,7 +30,6 @@ class Request:
         try:
             self.https.host = host
         except AttributeError:
-            logging.error("ATTRIBUTE ERROR, RECREATING")
             self.recreate_connection(host)
         self.body = None
         while self.body is None:

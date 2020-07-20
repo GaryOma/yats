@@ -136,7 +136,8 @@ class Connector:
             q = re.sub(regex, "", q)
         return since, until, q
 
-    def _tweet_worker(self, requests, lock, payload):
+    def _tweet_worker(self, requests, lock, task_queue, payload,
+                      limit_cooldown):
         with lock:
             if len(requests) > 0:
                 request = requests.pop()
@@ -144,28 +145,22 @@ class Connector:
                 request = TwitterRequest()
         if "q" in payload.keys():
             logging.debug(payload["q"])
-        bypass_cooldown = 0
         last_inserted = 1
-        tweets = TweetSet()
-        while last_inserted > 0:
-            try:
-                data, cursor = request.get_tweets_request(payload)
-            except TypeError:
-                request.to_file("error_request.json")
-                exit(0)
-            new_tweets = TweetSet(data)
-            tweets.add(new_tweets)
-            # logging.debug(f"total : {len(tweets)} "
-            #               f"Fetches {len(new_tweets)} tweets")
+        try:
+            data, cursor = request.get_tweets_request(payload)
+        except TypeError:
+            request.to_file("error_request.json")
+            exit(0)
+        new_tweets = TweetSet(data)
+        # logging.debug(f"total : {len(tweets)} "
+        #               f"Fetches {len(new_tweets)} tweets")
+        last_inserted = len(new_tweets)
+        if last_inserted > 5:
             payload["cursor"] = cursor
-            last_inserted = len(new_tweets)
-            if last_inserted < 5:
-                bypass_cooldown += 1
-            if bypass_cooldown >= 2:
-                break
+            task_queue.put(payload)
         with lock:
             requests.push(request)
-        return tweets
+        return new_tweets
 
     def _payload_generator(self,
                            q=None,
@@ -184,6 +179,7 @@ class Connector:
             until = def_until if until is None else until
         beg_date = since
         end_date = beg_date + timedelta(days=1)
+        print(beg_date, until)
         while beg_date < until:
             query = self._create_query(q=q,
                                        since=beg_date,
@@ -196,19 +192,32 @@ class Connector:
 
     def get_tweets_request(self,
                            thread=20,
+                           limit_cooldown=5,
                            **args):
         manager = Manager()
         lock = manager.Lock()
+        task_queue = manager.Queue()
+        task_list = [task for task in self._payload_generator(**args)]
         requests = RequestsHolder()
         for _ in range(thread):
             requests.push(TwitterRequest())
         tweets = TweetSet()
-        with ThreadPool(thread) as p:
-            for new_tweets in p.imap_unordered(
-                    partial(self._tweet_worker, requests, lock),
-                    self._payload_generator(**args)):
-                tweets.add(new_tweets)
-                logging.debug(f"TOTAL {len(tweets)}, NEW {len(new_tweets)}")
+        iterator = 0
+        while task_list:
+            logging.error(f"Round {iterator}")
+            with ThreadPool(thread) as p:
+                for new_tweets in p.imap_unordered(
+                        partial(self._tweet_worker, requests,
+                                lock, task_queue, limit_cooldown),
+                        task_list):
+                    tweets.add(new_tweets)
+                    logging.error(f"TOTAL {len(tweets)},"
+                                  f" NEW {len(new_tweets)}")
+            task_list = []
+            logging.error(f"task_queue {task_queue.qsize()}")
+            while not task_queue.empty():
+                task_list.append(task_queue.get())
+            iterator += 1
         return tweets
 
     def get_tweets_timeline(self, username, user_id=None):

@@ -48,7 +48,7 @@ class Tweet(SortedElement):
         self.lang = data["lang"]
 
     def __repr__(self):
-        return (f"<pyter.Tweet"
+        return (f"<yats.Tweet"
                 f":{self.creation.strftime('%y-%m-%d %H:%M:%S')}"
                 f":{self.id}"
                 f":{self.username}>")

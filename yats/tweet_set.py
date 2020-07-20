@@ -15,3 +15,6 @@ class TweetSet(SortedSet):
             for id, content in tweets_raw.items():
                 tweet = Tweet(content, users_raw)
                 self.add(tweet)
+
+    def __repr__(self):
+        return f"<yats.TweetSet:{super().__len__()}_tweets>"

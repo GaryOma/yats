@@ -22,15 +22,15 @@ class Profile:
         self.favourites_nb = user["legacy"]["favourites_count"]
 
     def __repr__(self):
-        return f"<pyter.Profile:{self.username}>"
+        return f"<yaps.Profile:{self.username}>"
 
     def describe(self):
-        logging.debug(f"{self.name}'s Profile:")
-        logging.debug(f"{self.username} {self.id}")
-        logging.debug(f"{self.description}")
-        logging.debug("Twitter Account:")
-        logging.debug(f"Creation date: {self.creation}")
-        logging.debug(f"Number of Tweets: {self.tweet_nb}")
-        logging.debug(f"Number of followers: {self.followers_nb}")
-        logging.debug(f"Number of following: {self.following_nb}")
-        logging.debug(f"Number of favourites: {self.favourites_nb}")
+        print(f"{self.name}'s Profile:")
+        print(f"{self.username} {self.id}")
+        print(f"{self.description}")
+        print("Twitter Account:")
+        print(f"Creation date: {self.creation}")
+        print(f"Number of Tweets: {self.tweet_nb}")
+        print(f"Number of followers: {self.followers_nb}")
+        print(f"Number of following: {self.following_nb}")
+        print(f"Number of favourites: {self.favourites_nb}")

@@ -21,6 +21,9 @@ class Connector:
     def __init__(self, fast_mode=True):
         pass
 
+    def __repr__(self):
+        return "<yaps.Connector>"
+
     def profile(self, name, request=None):
         request = TwitterRequest() if request is None else request
         request.get_profile_request(name)

@@ -11,7 +11,7 @@ from yats.profile import Profile
 from yats.tweet_set import TweetSet
 from yats.requests_holder import RequestsHolder
 
-TWITTER_CREATION_DATE = datetime(2006, 3, 21)
+TWITTER_CREATION_DATE = datetime(2006, 3, 21, tzinfo=timezone.utc)
 # COUNT_QUERY = 1000
 COUNT_QUERY = 20
 

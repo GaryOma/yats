@@ -38,9 +38,7 @@ class Request:
                 self.https.request(type, path, headers=headers)
             except http.client.CannotSendRequest:
                 print("Cannot send request, refreshing connection")
-                self.https = http.client.HTTPSConnection(
-                    host,
-                    timeout=DEFAULT_TIMEOUT)
+                self.refresh(host)
                 continue
             except socket.timeout:
                 logging.error("TIMEOUT WHILE SENDING REQUEST, REFRESHING")

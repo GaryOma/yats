@@ -1,10 +1,7 @@
 import re
 import logging
-import time
 from datetime import timedelta, timezone
 from multiprocessing import Manager
-from multiprocessing.queues import Queue
-from multiprocessing import get_context
 from multiprocessing.pool import ThreadPool
 from functools import partial
 
@@ -13,40 +10,11 @@ from yats.twitter_request import TwitterRequest
 from yats.profile import Profile
 from yats.tweet_set import TweetSet
 from yats.requests_holder import RequestsHolder
+from yats.iterable_queue import IterableQueue
 
 TWITTER_CREATION_DATE = datetime(2006, 3, 21, tzinfo=timezone.utc)
 # COUNT_QUERY = 1000
 COUNT_QUERY = 20
-
-
-class IterableQueue(Queue):
-    """
-    ``multiprocessing.Queue`` that can be iterated to ``get`` values
-
-    :param sentinel: signal that no more items will be received
-    """
-
-    def __init__(self, maxsize, *, ctx=None, sentinel=None):
-        self.sentinel = sentinel
-        self.max_empty = maxsize
-        self.empty_nb = 0
-        super().__init__(
-            maxsize=maxsize,
-            ctx=ctx if ctx is not None else get_context()
-        )
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        result = self.get()
-        while result is None:
-            print("incrementing")
-            self.empty_nb += 1
-            if self.empty_nb == self.max_empty:
-                raise StopIteration
-            result = self.get()
-        return result
 
 
 class Connector:
@@ -258,8 +226,6 @@ class Connector:
                               f" NEW {len(new_tweets)}")
             task_list = []
             logging.error(f"task_queue {task_queue.qsize()}")
-            # while not task_queue.empty():
-            #     task_list.append(task_queue.get())
             iterator += 1
         return tweets
 

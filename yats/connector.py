@@ -1,7 +1,10 @@
 import re
 import logging
+import time
 from datetime import timedelta, timezone
 from multiprocessing import Manager
+from multiprocessing.queues import Queue
+from multiprocessing import get_context
 from multiprocessing.pool import ThreadPool
 from functools import partial
 
@@ -14,6 +17,42 @@ from yats.requests_holder import RequestsHolder
 TWITTER_CREATION_DATE = datetime(2006, 3, 21, tzinfo=timezone.utc)
 # COUNT_QUERY = 1000
 COUNT_QUERY = 20
+
+
+class IterableQueue(Queue):
+    """
+    ``multiprocessing.Queue`` that can be iterated to ``get`` values
+
+    :param sentinel: signal that no more items will be received
+    """
+
+    def __init__(self, maxsize=0, *, ctx=None, sentinel=None):
+        self.sentinel = sentinel
+        super().__init__(
+            maxsize=maxsize,
+            ctx=ctx if ctx is not None else get_context()
+        )
+
+    def close(self):
+        self.put(self.sentinel)
+        # wait until buffer is flushed...
+        while self._buffer:
+            time.sleep(0.01)
+        # before shutting down the sender
+        super().close()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        result = self.get()
+        print("nexted")
+        if result is None:
+            print("endqueue")
+            # re-queue sentinel for other listeners
+            self.put(result)
+            raise StopIteration
+        return result
 
 
 class Connector:
@@ -199,27 +238,31 @@ class Connector:
                            **args):
         manager = Manager()
         lock = manager.Lock()
-        task_queue = manager.Queue()
+        task_queue = IterableQueue()
         task_list = [task for task in self._payload_generator(**args)]
+        for task in task_list:
+            task_queue.put(task)
         requests = RequestsHolder()
         for _ in range(thread):
             requests.push(TwitterRequest())
         tweets = TweetSet()
         iterator = 0
-        while task_list:
-            logging.error(f"Round {iterator}")
-            with ThreadPool(thread) as p:
-                for new_tweets in p.imap_unordered(
-                        partial(self._tweet_worker, requests,
-                                lock, task_queue, limit_cooldown),
-                        task_list):
-                    tweets.add(new_tweets)
-                    logging.error(f"TOTAL {len(tweets)},"
-                                  f" NEW {len(new_tweets)}")
+        logging.error(f"Round {iterator}")
+        with ThreadPool(thread) as p:
+            for new_tweets in p.imap_unordered(
+                    partial(self._tweet_worker, requests,
+                            lock, task_queue, limit_cooldown),
+                    task_queue):
+                tweets.add(new_tweets)
+                print("here")
+                # if not task_queue.empty():
+                #     p._quick_put(task_queue.get())
+                logging.error(f"TOTAL {len(tweets)},"
+                              f" NEW {len(new_tweets)}")
             task_list = []
             logging.error(f"task_queue {task_queue.qsize()}")
-            while not task_queue.empty():
-                task_list.append(task_queue.get())
+            # while not task_queue.empty():
+            #     task_list.append(task_queue.get())
             iterator += 1
         return tweets
 

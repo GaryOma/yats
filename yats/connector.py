@@ -182,7 +182,6 @@ class Connector:
             until = def_until if until is None else until
         beg_date = since
         end_date = beg_date + timedelta(days=1)
-        print(beg_date, until)
         while beg_date < until:
             query = self._create_query(q=q,
                                        since=beg_date,
@@ -226,7 +225,7 @@ class Connector:
                     f"TASK={task_it:{task_format}}/"
                     f"{round_size:<{task_format}} // "
                     f"ROUND={round_it:{round_format}} // "
-                    f"NEXT ROUND~{next_round_size} STEPS")
+                    f"NEXT ROUND<={next_round_size:{round_format}} TASKS")
                 print(disp_str, end="\r")
                 if len(new_tweets) < limit_cooldown:
                     next_round_size -= 1

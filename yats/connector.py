@@ -155,7 +155,7 @@ class Connector:
             exit(0)
         new_tweets = TweetSet(data)
         last_inserted = len(new_tweets)
-        if last_inserted > limit_cooldown:
+        if last_inserted >= limit_cooldown:
             payload["cursor"] = cursor
             task_queue.put(payload)
         else:

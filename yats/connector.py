@@ -3,7 +3,9 @@ import logging
 import time
 from datetime import timedelta, timezone
 from multiprocessing import Manager
+# from multiprocessing import Queue
 from multiprocessing.queues import Queue
+# from queue import Queue
 from multiprocessing import get_context
 from multiprocessing.pool import ThreadPool
 from functools import partial
@@ -26,14 +28,19 @@ class IterableQueue(Queue):
     :param sentinel: signal that no more items will be received
     """
 
-    def __init__(self, maxsize=0, *, ctx=None, sentinel=None):
+    def __init__(self, maxsize=-1, *, ctx=None, sentinel=None):
+        print("init queue")
+        if sentinel is None:
+            sentinel = object()
         self.sentinel = sentinel
         super().__init__(
             maxsize=maxsize,
             ctx=ctx if ctx is not None else get_context()
         )
+        self.put(self.sentinel)
 
     def close(self):
+        print("closing")
         self.put(self.sentinel)
         # wait until buffer is flushed...
         while self._buffer:
@@ -42,17 +49,18 @@ class IterableQueue(Queue):
         super().close()
 
     def __iter__(self):
-        return self
+        return iter(self.get, None)
 
-    def __next__(self):
-        result = self.get()
-        print("nexted")
-        if result is None:
-            print("endqueue")
-            # re-queue sentinel for other listeners
-            self.put(result)
-            raise StopIteration
-        return result
+    # def __next__(self):
+    #     result = self.get()
+    #     print(result)
+    #     print("nexted")
+    #     if result is self.sentinel:
+    #         print("endqueue")
+    #         # re-queue sentinel for other listeners
+    #         # self.put(result)
+    #         raise StopIteration
+    #     return result
 
 
 class Connector:
@@ -199,7 +207,8 @@ class Connector:
         last_inserted = len(new_tweets)
         if last_inserted > limit_cooldown:
             payload["cursor"] = cursor
-            task_queue.put(payload)
+            # task_queue.put(payload)
+            print("putted in queu")
         with lock:
             requests.push(request)
         return new_tweets
@@ -252,9 +261,8 @@ class Connector:
             for new_tweets in p.imap_unordered(
                     partial(self._tweet_worker, requests,
                             lock, task_queue, limit_cooldown),
-                    task_queue):
+                    task_queue, chunksize=1):
                 tweets.add(new_tweets)
-                print("here")
                 # if not task_queue.empty():
                 #     p._quick_put(task_queue.get())
                 logging.error(f"TOTAL {len(tweets)},"

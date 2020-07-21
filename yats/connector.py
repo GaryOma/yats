@@ -20,7 +20,7 @@ COUNT_QUERY = 20
 
 class Connector:
 
-    def __init__(self, fast_mode=True):
+    def __init__(self):
         pass
 
     def __repr__(self):

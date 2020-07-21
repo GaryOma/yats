@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import re
 from datetime import timezone
 
 from yats.connector import Connector
@@ -12,9 +13,10 @@ def main():
     parser = argparse.ArgumentParser(prog="yats",
                                      description="A fast Twitter scraper",
                                      epilog="yats @realdonaldtrump")
-    parser.add_argument("query", type=str,
-                        help=("the query to execute using the twitter "
-                              "syntax inside '' or a @username"))
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("query", type=str,
+                       help=("the query to execute using the twitter "
+                             "syntax inside '' or a @username"))
     parser.add_argument("-c", "--count", type=int, default=20,
                         help=("count parameter of the "
                               "query default %(default)s"))
@@ -35,6 +37,8 @@ def main():
     parser.add_argument("-u", "--until", default=None,
                         type=(lambda s: datetime.strptime(s, '%Y-%m-%d')),
                         help="until this date, YYYY-MM-DD")
+    group.add_argument("-w", "--words", nargs="+", default=None,
+                       help="words the tweet should contains : -w foo bar ..")
     con = Connector()
     args = parser.parse_args()
     if args.timeline:
@@ -45,6 +49,13 @@ def main():
         if args.until is not None:
             args.until = args.until.replace(tzinfo=timezone.utc)
         query = args.query
+        user_query = re.search(r"^@(\S+)$", query)
+        if user_query:
+            username = user_query.group(1)
+            q = None
+        else:
+            username = None
+            q = query
         query_list = ["thread", "limit_cooldown", "since", "until",
                       "count"]
         query_args = {}

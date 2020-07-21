@@ -1,4 +1,5 @@
 import re
+import math
 import logging
 from datetime import timedelta, timezone
 from multiprocessing import Manager
@@ -205,22 +206,29 @@ class Connector:
         for _ in range(thread):
             requests.push(TwitterRequest())
         tweets = TweetSet()
-        iterator = 0
+        round_it = 0
+        task_format = int(math.log(len(task_list), 10)) + 1
+        round_format = int(math.log(10, 10)) + 1
         while task_list:
-            logging.error(f"Round {iterator}")
+            task_it = 0
             with ThreadPool(thread) as p:
                 for new_tweets in p.imap_unordered(
                         partial(self._tweet_worker, requests,
                                 lock, task_queue, limit_cooldown),
                         task_list):
                     tweets.add(new_tweets)
-                    logging.error(f"TOTAL {len(tweets)},"
-                                  f" NEW {len(new_tweets)}")
+                    print(
+                        f"tweets total {len(tweets):<6} "
+                        f"added {len(new_tweets):<2} ",
+                        f"task {task_it:{task_format}}/"
+                        f"{len(task_list):<{task_format}} "
+                        f"round {round_it:{round_format}} ",
+                        end="\r")
+                    task_it += 1
             task_list = []
-            logging.error(f"task_queue {task_queue.qsize()}")
             while not task_queue.empty():
                 task_list.append(task_queue.get())
-            iterator += 1
+            round_it += 1
         return tweets
 
     def get_tweets_timeline(self, username, user_id=None):

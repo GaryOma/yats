@@ -196,16 +196,27 @@ class Connector:
                            thread=20,
                            limit_cooldown=5,
                            **args):
-        manager = Manager()
-        lock = manager.Lock()
+        # initiating the initial task lisk for
+        # the ThreadPool
         task_list = [task for task in self._payload_generator(**args)]
+        # copying each tasks in the IterableQueue
+        # thus "allowing" the threads to add
+        # additional tasks (bit of a dirty hack)
         task_queue = IterableQueue(maxsize=len(task_list))
         for task in task_list:
             task_queue.put(task)
+        # object that holds the open connections
+        # couldn't do it with Queues because of the SSLContext
+        # not pickable :'-(
         requests = RequestsHolder()
         for _ in range(thread):
             requests.push(TwitterRequest())
+        # creation of the lock for the RequestHolder
+        manager = Manager()
+        lock = manager.Lock()
+        # TweetSet to keep the fetched tweets
         tweets = TweetSet()
+        # formatting variables
         task_format = int(math.log(len(task_list), 10)) + 1
         task_it = 0
         round_format = int(math.log(COUNT_QUERY, 10)) + 1
@@ -234,7 +245,6 @@ class Connector:
                     task_it = 0
                     round_size = next_round_size
                     round_it += 1
-            task_list = []
             print(disp_str)
         return tweets
 

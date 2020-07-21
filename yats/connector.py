@@ -209,23 +209,25 @@ class Connector:
         tweets = TweetSet()
         task_format = int(math.log(len(task_list), 10)) + 1
         task_it = 0
-        round_format = int(math.log(10, 10)) + 1
+        round_format = int(math.log(COUNT_QUERY, 10)) + 1
         round_size = len(task_list)
         next_round_size = round_size
         round_it = 0
+        disp_str = ""
         with ThreadPool(thread) as p:
             for new_tweets in p.imap_unordered(
                     partial(self._tweet_worker, requests,
                             lock, task_queue, limit_cooldown),
                     task_queue):
                 tweets.add(new_tweets)
-                print(
-                    f"tweets total {len(tweets):<6} "
-                    f"added {len(new_tweets):<2} ",
-                    f"task {task_it:{task_format}}/"
-                    f"{round_size:<{task_format}} "
-                    f"round {round_it:{round_format}} ",
-                    end="\r")
+                disp_str = (
+                    f"TWEETS={len(tweets):<6} // "
+                    f"NEW={len(new_tweets):<2} // "
+                    f"TASK={task_it:{task_format}}/"
+                    f"{round_size:<{task_format}} // "
+                    f"ROUND={round_it:{round_format}} // "
+                    f"NEXT ROUND~{next_round_size} STEPS")
+                print(disp_str, end="\r")
                 if len(new_tweets) < limit_cooldown:
                     next_round_size -= 1
                 task_it += 1
@@ -234,7 +236,7 @@ class Connector:
                     round_size = next_round_size
                     round_it += 1
             task_list = []
-            logging.error(f"task_queue {task_queue.qsize()}")
+            print(disp_str)
         return tweets
 
     def get_tweets_timeline(self, username, user_id=None):

@@ -147,8 +147,6 @@ class Connector:
                 request = requests.pop()
             else:
                 request = TwitterRequest()
-        if "q" in payload.keys():
-            logging.debug(payload["q"])
         last_inserted = 1
         try:
             data, cursor = request.get_tweets_request(payload)
@@ -156,13 +154,10 @@ class Connector:
             request.to_file("error_request.json")
             exit(0)
         new_tweets = TweetSet(data)
-        # logging.debug(f"total : {len(tweets)} "
-        #               f"Fetches {len(new_tweets)} tweets")
         last_inserted = len(new_tweets)
         if last_inserted > limit_cooldown:
             payload["cursor"] = cursor
             task_queue.put(payload)
-            print("putted in queu")
         else:
             task_queue.put(None)
         with lock:
@@ -220,8 +215,6 @@ class Connector:
                     task_queue):
                 tweets.add(new_tweets)
                 print("here")
-                # if not task_queue.empty():
-                #     p._quick_put(task_queue.get())
                 logging.error(f"TOTAL {len(tweets)},"
                               f" NEW {len(new_tweets)}")
             task_list = []

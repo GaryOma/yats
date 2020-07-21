@@ -182,7 +182,8 @@ class Connector:
             until = def_until if until is None else until
         beg_date = since
         end_date = beg_date + timedelta(days=1)
-        print(beg_date, until)
+        print(f"from {since.strftime('%Y-%m-%d')}"
+              f" to {until.strftime('%Y-%m-%d')}")
         while beg_date < until:
             query = self._create_query(q=q,
                                        since=beg_date,
@@ -275,7 +276,7 @@ class Connector:
             profile = self.profile(username, request)
             beg_date = profile.creation
             print(beg_date)
-            logging.debug(f"Getting {profile.name}'s all tweets...")
+        print(f"Getting {username}'s all tweets...")
         tweets = self.get_tweets_request(from_account=username,
                                          since=beg_date,
                                          filter_replies=True,

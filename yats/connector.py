@@ -182,6 +182,7 @@ class Connector:
             until = def_until if until is None else until
         beg_date = since
         end_date = beg_date + timedelta(days=1)
+        print(beg_date, until)
         while beg_date < until:
             query = self._create_query(q=q,
                                        since=beg_date,
@@ -224,28 +225,32 @@ class Connector:
         next_round_size = round_size
         round_it = 0
         disp_str = ""
-        with ThreadPool(thread) as p:
-            for new_tweets in p.imap_unordered(
-                    partial(self._tweet_worker, requests,
-                            lock, task_queue, limit_cooldown),
-                    task_queue):
-                tweets.add(new_tweets)
-                disp_str = (
-                    f"TWEETS={len(tweets):<6} // "
-                    f"NEW={len(new_tweets):<2} // "
-                    f"TASK={task_it:{task_format}}/"
-                    f"{round_size:<{task_format}} // "
-                    f"ROUND={round_it:{round_format}} // "
-                    f"NEXT ROUND<={next_round_size:{round_format}} TASKS")
-                print(disp_str, end="\r")
-                if len(new_tweets) < limit_cooldown:
-                    next_round_size -= 1
-                task_it += 1
-                if task_it >= round_size:
-                    task_it = 0
-                    round_size = next_round_size
-                    round_it += 1
+        try:
+            with ThreadPool(thread) as p:
+                for new_tweets in p.imap_unordered(
+                        partial(self._tweet_worker, requests,
+                                lock, task_queue, limit_cooldown),
+                        task_queue):
+                    tweets.add(new_tweets)
+                    disp_str = (
+                        f"TWEETS={len(tweets):<6} | "
+                        f"NEW={len(new_tweets):<2} | "
+                        f"TASK={task_it:{task_format}}/"
+                        f"{round_size:<{task_format}} | "
+                        f"ROUND={round_it:{round_format}} | "
+                        f"NEXT ROUND<={next_round_size:{round_format}} TASKS")
+                    print(disp_str, end="\r")
+                    if len(new_tweets) < limit_cooldown:
+                        next_round_size -= 1
+                    task_it += 1
+                    if task_it >= round_size:
+                        task_it = 0
+                        round_size = next_round_size
+                        round_it += 1
             print(disp_str)
+        except KeyboardInterrupt:
+            print(disp_str)
+            print("Stopped by the user")
         return tweets
 
     def get_tweets_timeline(self, username, user_id=None):

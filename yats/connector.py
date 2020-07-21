@@ -14,8 +14,8 @@ from yats.requests_holder import RequestsHolder
 from yats.iterable_queue import IterableQueue
 
 TWITTER_CREATION_DATE = datetime(2006, 3, 21, tzinfo=timezone.utc)
-# COUNT_QUERY = 1000
 COUNT_QUERY = 20
+# COUNT_QUERY = 1000
 
 
 class Connector:
@@ -232,6 +232,7 @@ class Connector:
                 if task_it >= round_size:
                     task_it = 0
                     round_size = next_round_size
+                    round_it += 1
             task_list = []
             logging.error(f"task_queue {task_queue.qsize()}")
         return tweets

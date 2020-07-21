@@ -29,6 +29,9 @@ def main():
                               "default = %(default)s"))
     parser.add_argument("-tl", "--timeline", action="store_true",
                         help="only fetches the tweets from the user timeline")
+    parser.add_argument("-u", "--until", default=None,
+                        type=(lambda s: datetime.strptime(s, '%Y-%m-%d')),
+                        help="until this date, YYYY-MM-DD")
     con = Connector()
     args = parser.parse_args()
     if args.timeline:
@@ -36,8 +39,10 @@ def main():
     else:
         if args.since is not None:
             args.since = args.since.replace(tzinfo=timezone.utc)
+        if args.until is not None:
+            args.until = args.until.replace(tzinfo=timezone.utc)
         query = args.query
-        query_list = ["thread", "limit_cooldown", "since"]
+        query_list = ["thread", "limit_cooldown", "since", "until"]
         query_args = {}
         for arg in query_list:
             query_args[arg] = vars(args)[arg]

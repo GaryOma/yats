@@ -89,7 +89,7 @@ class Connector:
             query = query[:-1]
         return query
 
-    def _create_payload(self, query=None, user_id=None, count=COUNT_QUERY):
+    def _create_payload(self, count, query=None, user_id=None):
         payload = {
             "include_profile_interstitial_type": "1",
             "include_blocking": "1",
@@ -166,6 +166,7 @@ class Connector:
         return new_tweets
 
     def _payload_generator(self,
+                           count=COUNT_QUERY,
                            q=None,
                            since=None,
                            until=None,
@@ -189,7 +190,7 @@ class Connector:
                                        since=beg_date,
                                        until=end_date,
                                        **args)
-            payload = self._create_payload(query=query)
+            payload = self._create_payload(query=query, count=count)
             yield payload
             beg_date = end_date
             end_date += timedelta(days=1)

@@ -15,6 +15,9 @@ def main():
     parser.add_argument("query", type=str,
                         help=("the query to execute using the twitter "
                               "syntax inside '' or a @username"))
+    parser.add_argument("-c", "--count", type=int, default=20,
+                        help=("count parameter of the "
+                              "query default %(default)s"))
     parser.add_argument("-lc", "--limit-cooldown", type=int, default=5,
                         help=("minimum tweets to get per "
                               "requests during cooldown "
@@ -42,7 +45,8 @@ def main():
         if args.until is not None:
             args.until = args.until.replace(tzinfo=timezone.utc)
         query = args.query
-        query_list = ["thread", "limit_cooldown", "since", "until"]
+        query_list = ["thread", "limit_cooldown", "since", "until",
+                      "count"]
         query_args = {}
         for arg in query_list:
             query_args[arg] = vars(args)[arg]

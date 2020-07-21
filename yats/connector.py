@@ -24,7 +24,7 @@ class Connector:
         pass
 
     def __repr__(self):
-        return "<yaps.Connector>"
+        return "<yats.Connector>"
 
     def profile(self, name, request=None):
         request = TwitterRequest() if request is None else request

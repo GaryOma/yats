@@ -14,6 +14,11 @@ USER_AGENT = {
                    "AppleWebKit/537.36 (KHTML, like Gecko) "
                    "Chrome/83.0.4103.97 Safari/537.36"),
 }
+USER_AGENT_2 = {
+    "User-Agent": ("Mozilla/5.0 (X11; Linux x86_64) "
+                   "AppleWebKit/537.36 (KHTML, like Gecko) "
+                   "Chrome/83.0.4103.95 Safari/537.37"),
+}
 TOKEN_BEARER = ("AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs"
                 "%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA")
 
@@ -48,7 +53,7 @@ class TwitterRequest(Request):
             logging.critical(f"cooldown until {dt.isoformat()}")
             logging.warning("recreating ?")
             self.recreate_connection(TWITTER_URL)
-            self.get(TWITTER_URL, headers=USER_AGENT)
+            self.get(TWITTER_URL, headers=USER_AGENT_2)
         self.token_guest = re.search(r"gt=(\w+)",
                                      self.body).group(1)
         self.main_js = re.search(r"https://abs.twimg.com/responsive-web/web/"

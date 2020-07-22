@@ -38,8 +38,7 @@ class TwitterRequest(Request):
             return not hasattr(self, attribute) or attribute is None
 
     def _get_initial_request(self):
-        logging.debug("Getting the token_guest and main_js...")
-        logging.debug(f"  get initial request {TWITTER_URL}")
+        logging.debug(f"get initial request {TWITTER_URL}")
         self.get(TWITTER_URL, headers=USER_AGENT)
         self.token_guest = re.search(r"gt=(\w+)",
                                      self.body).group(1)
@@ -48,7 +47,7 @@ class TwitterRequest(Request):
                                  self.body).group(0)
 
     def _get_main_js_page(self):
-        logging.debug("Getting the token_bearer and graphql_ext...")
+        logging.debug("get the token_bearer and graphql_ext")
         self.get(self.main_js)
         self.token_bearer = re.search(r's=\"([a-zA-Z0-9+%]{10,}?)\"',
                                       self.body).group(1)
@@ -121,7 +120,7 @@ class TwitterRequest(Request):
         if rate_limit == 0:
             print("ur' fucked")
         elif rate_limit < 10:
-            logging.info(f"WARNING, rate-limit = {rate_limit}")
-            logging.info("Refreshing now")
+            logging.warning(f"WARNING, rate-limit = {rate_limit}")
+            logging.debug("Refreshing now")
             self._get_initial_request()
         return data, cursor

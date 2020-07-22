@@ -30,27 +30,29 @@ class Request:
         try:
             self.https.host = host
         except AttributeError:
+            logging.error("https not created, creating")
             self.recreate_connection(host)
         self.body = None
         while self.body is None:
+            logging.debug(f"trying to send request to {host}")
             try:
                 self.https.request(type, path, headers=headers)
             except http.client.CannotSendRequest:
-                print("Cannot send request, refreshing connection")
+                logging.error("Cannot send request, refreshing connection")
                 self.recreate_connection(host)
                 continue
             except socket.timeout:
-                logging.error("TIMEOUT WHILE SENDING REQUEST, REFRESHING")
+                logging.error("timeout while sending request, refreshing")
                 self.recreate_connection(host)
                 continue
             # parse the response
             try:
                 response = self.https.getresponse()
             except socket.timeout:
-                logging.error("TIMEOUT WHILE READING RESPONSE, REFRESHING")
+                logging.error("timeout while reading response, refreshing")
                 self.recreate_connection(host)
                 continue
-            # print("RESPONSE STATUS", response.status)
+            logging.debug(f"response status {response.status}")
             content_type = self._parse_content_type(
                 response.getheader("content-type")
             )
@@ -60,11 +62,13 @@ class Request:
                 self.body = self._parse_body(response.read(), content_type)
             except socket.timeout:
                 self.recreate_connection(host)
-                logging.error("TIMEOUT WHILE READING BODY, REFRESHING")
+                logging.error("timeout while reading body, refreshing")
                 continue
+        logging.debug("body sucessfully read")
 
     def recreate_connection(self, host):
         url_parsed = urllib.parse.urlparse(host)
+        logging.debug(f"recreating connection {url_parsed.netloc}")
         self.https = http.client.HTTPSConnection(
             url_parsed.path,
             timeout=DEFAULT_TIMEOUT)

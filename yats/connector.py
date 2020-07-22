@@ -166,6 +166,7 @@ class Connector:
         return new_tweets
 
     def _payload_generator(self,
+                           verbosity,
                            count=COUNT_QUERY,
                            q=None,
                            since=None,
@@ -183,8 +184,12 @@ class Connector:
             until = def_until if until is None else until
         beg_date = since
         end_date = beg_date + timedelta(days=1)
-        print(f"from {since.strftime('%Y-%m-%d')}"
-              f" to {until.strftime('%Y-%m-%d')}")
+        print_str = (f"from {since.strftime('%Y-%m-%d')}"
+                     f" to {until.strftime('%Y-%m-%d')}")
+        if 0 <= verbosity <= 1:
+            print(print_str)
+        elif verbosity > 1:
+            logging.info(print_str)
         while beg_date < until:
             query = self._create_query(q=q,
                                        since=beg_date,
@@ -196,12 +201,15 @@ class Connector:
             end_date += timedelta(days=1)
 
     def get_tweets_request(self,
+                           verbosity,
                            thread=20,
                            limit_cooldown=5,
                            **args):
         # initiating the initial task lisk for
         # the ThreadPool
-        task_list = [task for task in self._payload_generator(**args)]
+        task_list = [task for task in self._payload_generator(verbosity,
+                                                              **args)
+                     ]
         # copying each tasks in the IterableQueue
         # thus "allowing" the threads to add
         # additional tasks (bit of a dirty hack)
@@ -241,7 +249,11 @@ class Connector:
                         f"{round_size:<{task_format}} | "
                         f"ROUND={round_it:{round_format}} | "
                         f"NEXT ROUND<={next_round_size:{round_format}} TASKS")
-                    print(disp_str, end="\r")
+                    if 0 <= verbosity <= 1:
+                        end_char = "\r" if verbosity == 0 else "\n"
+                        print(disp_str, end=end_char)
+                    elif verbosity > 1:
+                        logging.info(disp_str)
                     if len(new_tweets) < limit_cooldown:
                         next_round_size -= 1
                     task_it += 1
@@ -249,10 +261,12 @@ class Connector:
                         task_it = 0
                         round_size = next_round_size
                         round_it += 1
-            print(disp_str)
+            if 0 <= verbosity <= 1:
+                print(disp_str)
         except KeyboardInterrupt:
-            print(disp_str)
-            print("Stopped by the user")
+            if 0 <= verbosity <= 1:
+                print(disp_str)
+                print("Stopped by the user")
         return tweets
 
     def get_tweets_timeline(self, username, user_id=None):
@@ -269,18 +283,22 @@ class Connector:
         tweets = self._tweet_worker(requests, lock, payload)
         return tweets
 
-    def get_tweets_user(self, username, since=None, **args):
+    def get_tweets_user(self, username, verbosity, since=None, **args):
         if since is not None:
             beg_date = since
         else:
             request = TwitterRequest()
             profile = self.profile(username, request)
             beg_date = profile.creation
-            print(beg_date)
-        print(f"Getting {username}'s all tweets...")
+        print_str = f"Getting {username}'s all tweets..."
+        if 0 <= verbosity <= 1:
+            print(print_str)
+        elif verbosity > 1:
+            logging.info(print_str)
         tweets = self.get_tweets_request(from_account=username,
                                          since=beg_date,
                                          filter_replies=True,
+                                         verbosity=verbosity,
                                          **args)
         return tweets
 

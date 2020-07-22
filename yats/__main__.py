@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import logging
 from datetime import timezone
 
 from yats.connector import Connector
@@ -12,6 +13,7 @@ def main():
     parser = argparse.ArgumentParser(prog="yats",
                                      description="A fast Twitter scraper",
                                      epilog="yats @realdonaldtrump")
+    group = parser.add_mutually_exclusive_group()
     parser.add_argument("query", type=str,
                         help=("the query to execute using the twitter "
                               "syntax inside '' or a @username"))
@@ -35,8 +37,41 @@ def main():
     parser.add_argument("-u", "--until", default=None,
                         type=(lambda s: datetime.strptime(s, '%Y-%m-%d')),
                         help="until this date, YYYY-MM-DD")
+    group.add_argument("-v", "--verbosity", action="count", default=0,
+                       help=("verbosity level "
+                             "increase with -v or -vv or -vvv"))
+    group.add_argument("-q", "--quiet", action="store_true",
+                       help="remove all the outputs")
     con = Connector()
     args = parser.parse_args()
+    print(args)
+    if args.verbosity > 3:
+        print("Verbosity too high, accepted values are:")
+        print(" -v, -vv, -vvv")
+        exit(1)
+    elif args.quiet:
+        verbosity_level = -1
+    else:
+        verbosity_level = args.verbosity
+    logging_mode = {
+        3: logging.NOTSET,
+        2: logging.INFO,
+        1: logging.CRITICAL,
+        0: logging.CRITICAL,
+        -1: logging.CRITICAL
+    }
+    logger = logging.getLogger()
+    log_formatter = logging.Formatter("%(asctime)s "
+                                      "[%(threadName)-12.12s] "
+                                      "[%(levelname)-5.5s]  "
+                                      "%(message)s")
+    logging_level = logging_mode[verbosity_level]
+    print(logging_level)
+    console_handler = logging.StreamHandler()
+    # console_handler.setLevel(logging_level)
+    console_handler.setFormatter(log_formatter)
+    logger.addHandler(console_handler)
+    logger.setLevel(logging_level)
     if args.timeline:
         tweets = con.get_tweets_timeline(args.query)
     else:
@@ -50,8 +85,7 @@ def main():
         query_args = {}
         for arg in query_list:
             query_args[arg] = vars(args)[arg]
-        tweets = con.request(query, **query_args)
-        # tweets = con.get_tweets_user(args.username, thread_nb=args.thread)
+        tweets = con.request(query, verbosity=verbosity_level, **query_args)
     print(f"writing {len(tweets)} tweets to {args.output}")
     tweets.export(args.output)
     # profile = con.profile(args.username)

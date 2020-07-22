@@ -42,7 +42,7 @@ class TwitterRequest(Request):
         logging.debug(f"get initial request {TWITTER_URL}")
         self.get(TWITTER_URL, headers=USER_AGENT)
         if re.search(r'\"x-rate-limit-remaining\":\"0\"', self.body):
-            timestamp = re.search(r'\"x-rate-limit-reset\":\"(\d+\")',
+            timestamp = re.search(r'\"x-rate-limit-reset\":\"(\d+)\"',
                                   self.body).group(1)
             dt = datetime.fromtimestamp(int(timestamp))
             logging.critical(f"cooldown until {dt.isoformat()}")

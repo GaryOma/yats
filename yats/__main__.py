@@ -64,7 +64,8 @@ def main():
     log_formatter = logging.Formatter("%(asctime)s "
                                       "[%(threadName)-12.12s] "
                                       "[%(levelname)-5.5s]  "
-                                      "%(message)s")
+                                      "%(message)s",
+                                      datefmt='%H:%M:%S',)
     logging_level = logging_mode[verbosity_level]
     print(logging_level)
     console_handler = logging.StreamHandler()

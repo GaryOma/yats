@@ -47,7 +47,7 @@ class TwitterRequest(Request):
             dt = datetime.fromtimestamp(int(timestamp))
             logging.critical(f"cooldown until {dt.isoformat()}")
             logging.warning("recreating ?")
-            self._recreate_connection(TWITTER_URL)
+            self.recreate_connection(TWITTER_URL)
             self.get(TWITTER_URL, headers=USER_AGENT)
         self.token_guest = re.search(r"gt=(\w+)",
                                      self.body).group(1)

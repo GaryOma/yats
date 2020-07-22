@@ -142,13 +142,14 @@ class Connector:
         return since, until, q
 
     def _tweet_worker(self, requests, lock, task_queue, limit_cooldown,
-                      payload):
+                      max_round, payload):
         with lock:
             if len(requests) > 0:
                 request = requests.pop()
             else:
                 request = TwitterRequest()
-        last_inserted = 1
+        current_round = payload["round"] + 1
+        del payload["round"]
         try:
             data, cursor = request.get_tweets_request(payload)
         except TypeError:
@@ -156,8 +157,9 @@ class Connector:
             exit(0)
         new_tweets = TweetSet(data)
         last_inserted = len(new_tweets)
-        if last_inserted >= limit_cooldown:
+        if last_inserted >= limit_cooldown and current_round < max_round:
             payload["cursor"] = cursor
+            payload["round"] = current_round
             task_queue.put(payload)
         else:
             task_queue.put(None)
@@ -196,12 +198,14 @@ class Connector:
                                        until=end_date,
                                        **args)
             payload = self._create_payload(query=query, count=count)
+            payload["round"] = 0
             yield payload
             beg_date = end_date
             end_date += timedelta(days=1)
 
     def get_tweets_request(self,
                            verbosity,
+                           max_round,
                            thread=20,
                            limit_cooldown=5,
                            **args):
@@ -230,7 +234,7 @@ class Connector:
         # formatting variables
         task_format = int(math.log(len(task_list), 10)) + 1
         task_it = 0
-        round_format = int(math.log(COUNT_QUERY, 10)) + 1
+        round_format = int(math.log(max_round, 10)) + 1
         round_size = len(task_list)
         next_round_size = round_size
         round_it = 0
@@ -239,7 +243,8 @@ class Connector:
             with ThreadPool(thread) as p:
                 for new_tweets in p.imap_unordered(
                         partial(self._tweet_worker, requests,
-                                lock, task_queue, limit_cooldown),
+                                lock, task_queue, limit_cooldown,
+                                max_round),
                         task_queue):
                     tweets.add(new_tweets)
                     disp_str = (
@@ -247,8 +252,9 @@ class Connector:
                         f"NEW={len(new_tweets):<2} | "
                         f"TASK={task_it:{task_format}}/"
                         f"{round_size:<{task_format}} | "
-                        f"ROUND={round_it:{round_format}} | "
-                        f"NEXT ROUND<={next_round_size:{round_format}} TASKS")
+                        f"ROUND={round_it:{round_format}}/"
+                        f"{max_round} | "
+                        f"NEXT ROUND<={next_round_size:{task_format}} TASKS")
                     if 0 <= verbosity <= 1:
                         end_char = "\r" if verbosity == 0 else "\n"
                         print(disp_str, end=end_char)

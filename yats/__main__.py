@@ -26,6 +26,8 @@ def main():
                               "default %(default)s"))
     parser.add_argument("-o", "--output", type=str, default="/tmp/tweets.json",
                         help="output file .json or .csv, default %(default)s")
+    parser.add_argument("-r", "--max-round", type=int, default=20,
+                        help="max round limit default %(default)s")
     parser.add_argument("-s", "--since", default=None,
                         type=(lambda s: datetime.strptime(s, '%Y-%m-%d')),
                         help="since this date, YYYY-MM-DD")
@@ -82,7 +84,7 @@ def main():
             args.until = args.until.replace(tzinfo=timezone.utc)
         query = args.query
         query_list = ["thread", "limit_cooldown", "since", "until",
-                      "count"]
+                      "count", "max_round"]
         query_args = {}
         for arg in query_list:
             query_args[arg] = vars(args)[arg]

@@ -3,6 +3,7 @@ import sys
 import logging
 
 from yats.request import Request
+from yats.custom_datetime import CustomDateTime as datetime
 
 TWITTER_URL = "https://mobile.twitter.com/"
 GRAPHQL_URL = "https://api.twitter.com/graphql/"
@@ -40,6 +41,12 @@ class TwitterRequest(Request):
     def _get_initial_request(self):
         logging.debug(f"get initial request {TWITTER_URL}")
         self.get(TWITTER_URL, headers=USER_AGENT)
+        if re.search(r'\"x-rate-limit-remaining\":\"0\"', self.body):
+            timestamp = re.search(r'\"x-rate-limit-reset\":\"(\d+\")',
+                                  self.body).group(1)
+            dt = datetime.fromtimestamp(int(timestamp))
+            logging.critical(f"cooldown until {dt.isoformat()}")
+            exit(0)
         self.token_guest = re.search(r"gt=(\w+)",
                                      self.body).group(1)
         self.main_js = re.search(r"https://abs.twimg.com/responsive-web/web/"

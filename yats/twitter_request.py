@@ -40,6 +40,7 @@ class TwitterRequest(Request):
 
     def _get_initial_request(self):
         logging.debug(f"get initial request {TWITTER_URL}")
+        self.token_guest()
         self.get(TWITTER_URL, headers=USER_AGENT)
         if re.search(r'\"x-rate-limit-remaining\":\"0\"', self.body):
             timestamp = re.search(r'\"x-rate-limit-reset\":\"(\d+)\"',

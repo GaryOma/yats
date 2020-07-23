@@ -23,7 +23,7 @@ class RequestsHolder:
             "proxytype": "http",
             "timeout": max_timeout,
             "country": "all",
-            "ssl": "all",
+            "ssl": "yes",
             "anonymity": "all"
         }
         req = TwitterRequest(URL_PROXYSCRAPE)
@@ -40,9 +40,11 @@ class RequestsHolder:
         return len(self.requests)
 
     def get(self):
+        logging.critical(f"get request {len(self.requests)}")
         if len(self.requests) == 0:
             if self.proxy:
                 proxy = self.proxies.pop()
+                logging.debug(f"using proxy {proxy}")
                 req = TwitterRequest(proxy=proxy)
             else:
                 req = TwitterRequest()
@@ -51,4 +53,5 @@ class RequestsHolder:
         return req
 
     def push(self, request):
+        logging.debug("pushing request")
         self.requests.append(request)

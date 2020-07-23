@@ -5,7 +5,7 @@ import json
 import socket
 import re
 
-DEFAULT_TIMEOUT = 5
+DEFAULT_TIMEOUT = 10
 
 
 class Request:
@@ -27,35 +27,39 @@ class Request:
         return body
 
     def _send(self, type, host, path, headers):
-        if hasattr(self, "https"):
-            if self.proxy is not None:
-                self.https.set_tunnel(host, headers=headers)
-            else:
-                self.https.host = host
-        else:
+        logging.debug("will send" + host)
+        if not hasattr(self, "https"):
             self.recreate_connection(host)
+        if self.proxy is not None:
+            # self.https.set_tunnel(host)
+            self.https.set_tunnel(host, port=443, headers=headers)
+            # self.https.set_tunnel(host, port=443)
+        else:
+            self.https.host = host
         self.body = None
         while self.body is None:
             logging.debug(f"trying to send request to {host}")
             try:
                 if self.proxy is not None:
-                    self.https.request(type, path)
+                    logging.debug(path)
+                    # self.https.request(type, path)
+                    self.https.request(type, path, headers=headers)
                 else:
                     self.https.request(type, path, headers=headers)
             except http.client.CannotSendRequest:
                 logging.error("Cannot send request, refreshing connection")
-                self.recreate_connection(host)
+                # self.recreate_connection(host)
                 continue
             except socket.timeout:
                 logging.error("timeout while sending request, refreshing")
-                self.recreate_connection(host)
+                # self.recreate_connection(host)
                 continue
             # parse the response
             try:
                 response = self.https.getresponse()
             except socket.timeout:
                 logging.error("timeout while reading response, refreshing")
-                self.recreate_connection(host)
+                # self.recreate_connection(host)
                 continue
             logging.debug(f"response status {response.status}")
             content_type = self._parse_content_type(
@@ -66,18 +70,21 @@ class Request:
             try:
                 self.body = self._parse_body(response.read(), content_type)
             except socket.timeout:
-                self.recreate_connection(host)
+                # self.recreate_connection(host)
                 logging.error("timeout while reading body, refreshing")
                 continue
         logging.debug("body sucessfully read")
+        logging.debug(self.body)
 
     def recreate_connection(self, host):
         if self.proxy is not None:
-            logging.debug(f"create new connection with proxy {host[0]}")
+            logging.critical(self.proxy)
+            logging.debug(f"create new connection with proxy {self.proxy[0]}")
             self.https = http.client.HTTPSConnection(
                 self.proxy[0],
                 self.proxy[1],
                 timeout=DEFAULT_TIMEOUT)
+            self.https.set_debuglevel(1000)
         else:
             url_parsed = urllib.parse.urlparse(host)
             logging.debug(f"create new connection with {url_parsed.netloc}")

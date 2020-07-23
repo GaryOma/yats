@@ -49,8 +49,10 @@ class TwitterRequest(Request):
             logging.warning("recreating ?")
             self.recreate_connection(TWITTER_URL)
             self.get(TWITTER_URL, headers=USER_AGENT)
+        logging.debug("reading token")
         self.token_guest = re.search(r"gt=(\w+)",
                                      self.body).group(1)
+        print("token", self.token_guest)
         self.main_js = re.search(r"https://abs.twimg.com/responsive-web/"
                                  r"(?:client-)web(?:-legacy)?/"
                                  r"(main.(?:.*?)\.js)",
@@ -119,6 +121,7 @@ class TwitterRequest(Request):
             url = f"{self.url_timeline}{payload['userId']}.json"
         elif "q" in payload.keys():
             url = self.url_search
+        logging.debug(f"get request {url}")
         self.get(url,
                  params=payload,
                  headers=headers)

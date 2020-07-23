@@ -143,6 +143,7 @@ class Connector:
 
     def _tweet_worker(self, requests, lock, task_queue, limit_cooldown,
                       max_round, payload):
+        logging.debug("taking request")
         with lock:
             request = requests.get()
         current_round = payload["round"] + 1
@@ -152,7 +153,9 @@ class Connector:
         except TypeError:
             request.to_file("error_request.json")
             exit(0)
+        logging.debug("request taken")
         new_tweets = TweetSet(data)
+        logging.debug(f"got {len(new_tweets)} tweets")
         last_inserted = len(new_tweets)
         if last_inserted >= limit_cooldown and current_round < max_round:
             payload["cursor"] = cursor
@@ -221,8 +224,6 @@ class Connector:
         # couldn't do it with Queues because of the SSLContext
         # not pickable :'-(
         requests = RequestsHolder()
-        for _ in range(thread):
-            requests.push(TwitterRequest())
         # creation of the lock for the RequestHolder
         manager = Manager()
         lock = manager.Lock()

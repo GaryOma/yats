@@ -51,7 +51,8 @@ class TwitterRequest(Request):
             self.get(TWITTER_URL, headers=USER_AGENT)
         self.token_guest = re.search(r"gt=(\w+)",
                                      self.body).group(1)
-        self.main_js = re.search(r"https://abs.twimg.com/responsive-web/web/"
+        self.main_js = re.search(r"https://abs.twimg.com/responsive-web/"
+                                 r"web(?:_legacy)?/"
                                  r"(main.(?:.*?)\.js)",
                                  self.body).group(0)
 

@@ -144,10 +144,7 @@ class Connector:
     def _tweet_worker(self, requests, lock, task_queue, limit_cooldown,
                       max_round, payload):
         with lock:
-            if len(requests) > 0:
-                request = requests.pop()
-            else:
-                request = TwitterRequest()
+            request = requests.get()
         current_round = payload["round"] + 1
         del payload["round"]
         try:

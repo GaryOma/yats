@@ -20,14 +20,14 @@ TOKEN_BEARER = ("AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs"
 
 class TwitterRequest(Request):
 
-    def __init__(self, fast_mode=False):
+    def __init__(self, fast_mode=False, proxy=None):
         if fast_mode:
             self.graphql_ext = USER_INFO_QL_ID
             self.token_bearer = TOKEN_BEARER
         self.token_guest = None
         self.url_timeline = "https://api.twitter.com/2/timeline/profile/"
         self.url_search = "https://api.twitter.com/2/search/adaptive.json"
-        super().__init__()
+        super().__init__(proxy=proxy)
 
     def _is_unset(self, attributes):
         if isinstance(attributes, list):

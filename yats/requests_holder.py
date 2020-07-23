@@ -40,7 +40,6 @@ class RequestsHolder:
         return len(self.requests)
 
     def get(self):
-        logging.critical(f"get request {len(self.requests)}")
         if len(self.requests) == 0:
             if self.proxy:
                 proxy = self.proxies.pop()

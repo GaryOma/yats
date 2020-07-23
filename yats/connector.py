@@ -165,6 +165,7 @@ class Connector:
             task_queue.put(None)
         with lock:
             requests.push(request)
+        logging.debug("quitting worker")
         return new_tweets
 
     def _payload_generator(self,
@@ -245,6 +246,7 @@ class Connector:
                                 max_round),
                         task_queue):
                     tweets.add(new_tweets)
+                    print("lol")
                     disp_str = (
                         f"TWEETS={len(tweets):<6} | "
                         f"NEW={len(new_tweets):<2} | "

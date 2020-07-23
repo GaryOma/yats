@@ -1,6 +1,7 @@
 import re
 import sys
 import logging
+import time
 
 from yats.request import Request
 from yats.custom_datetime import CustomDateTime as datetime
@@ -45,8 +46,12 @@ class TwitterRequest(Request):
             timestamp = re.search(r'\"x-rate-limit-reset\":\"(\d+)\"',
                                   self.body).group(1)
             dt = datetime.fromtimestamp(int(timestamp))
-            logging.critical(f"cooldown until {dt.isoformat()}")
+            logging.critical(f"cooldown until {dt.ctime()}")
             logging.warning("recreating ?")
+            sleep = int(timestamp) - time.time() + 60
+            logging.critical(f"sleeping for {sleep} seconds")
+            time.sleep(sleep)
+            logging.critical("resuming")
             self.recreate_connection(TWITTER_URL)
             self.get(TWITTER_URL, headers=USER_AGENT)
         self.token_guest = re.search(r"gt=(\w+)",

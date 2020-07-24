@@ -40,20 +40,22 @@ class TwitterRequest(Request):
 
     def _get_initial_request(self):
         logging.debug(f"get initial request {TWITTER_URL}")
-        self.token_guest()
         self.get(TWITTER_URL, headers=USER_AGENT)
-        if re.search(r'\"x-rate-limit-remaining\":\"0\"', self.body):
+        while re.search(r'\"x-rate-limit-remaining\":\"0\"', self.body):
             timestamp = re.search(r'\"x-rate-limit-reset\":\"(\d+)\"',
                                   self.body).group(1)
             dt = datetime.fromtimestamp(int(timestamp))
-            logging.critical(f"cooldown until {dt.isoformat()}")
+            if self.proxy is not None:
+                logging.warning(f"cooldown until {dt.isoformat()}")
+            else:
+                logging.error(f"cooldown until {dt.isoformat()}")
             logging.warning("recreating ?")
-            self.recreate_connection(TWITTER_URL)
+            self.recreate_connection(TWITTER_URL, reset_proxy=True)
             self.get(TWITTER_URL, headers=USER_AGENT)
         logging.debug("reading token")
         self.token_guest = re.search(r"gt=(\w+)",
                                      self.body).group(1)
-        print("token", self.token_guest)
+        logging.debug("token " + self.token_guest)
         self.main_js = re.search(r"https://abs.twimg.com/responsive-web/"
                                  r"(?:client-)web(?:-legacy)?/"
                                  r"(main.(?:.*?)\.js)",

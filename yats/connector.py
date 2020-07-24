@@ -246,7 +246,6 @@ class Connector:
                                 max_round),
                         task_queue):
                     tweets.add(new_tweets)
-                    print("lol")
                     disp_str = (
                         f"TWEETS={len(tweets):<6} | "
                         f"NEW={len(new_tweets):<2} | "

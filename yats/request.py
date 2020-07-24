@@ -29,7 +29,7 @@ class Request:
     def _send(self, type, host, path, headers):
         logging.debug("will send" + host)
         if not hasattr(self, "https"):
-            self.recreate_connection(host)
+            self.recreate_connection(host, reset_proxy=True)
         if self.proxy is not None:
             # self.https.set_tunnel(host)
             self.recreate_connection(host)
@@ -62,6 +62,7 @@ class Request:
                 continue
             except OSError:
                 logging.error("OSError")
+                self.recreate_connection(host, reset_proxy=True)
                 continue
             # parse the response
             try:
@@ -85,14 +86,20 @@ class Request:
         logging.debug("body sucessfully read")
         self.https.close()
 
-    def recreate_connection(self, host):
+    def recreate_connection(self, host, reset_proxy=False):
         if hasattr(self, "https"):
             self.https.close()
         if self.proxy is not None:
-            logging.debug(f"create new connection with proxy {self.proxy[0]}")
+            if reset_proxy:
+                logging.debug("resetting the proxy")
+                proxy = self.proxy.get()
+                self.current_proxy = proxy
+            else:
+                proxy = self.current_proxy
+            logging.debug(f"create new connection with proxy {proxy[0]}")
             self.https = http.client.HTTPSConnection(
-                self.proxy[0],
-                self.proxy[1],
+                proxy[0],
+                proxy[1],
                 timeout=DEFAULT_TIMEOUT)
             # self.https.set_debuglevel(1000)
         else:

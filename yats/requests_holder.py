@@ -1,4 +1,5 @@
 import logging
+from multiprocessing import Queue
 
 from yats.twitter_request import TwitterRequest
 
@@ -11,7 +12,10 @@ class RequestsHolder:
         self.requests = []
         self.proxy = proxy
         if self.proxy:
-            self.proxies = self._get_proxy_list()
+            self.proxies = Queue()
+            proxy_list = self._get_proxy_list()
+            for add in proxy_list:
+                self.proxies.put(add)
 
     def _get_proxy_list(self):
         addresses = self._get_proxyscrape_list()
@@ -42,9 +46,7 @@ class RequestsHolder:
     def get(self):
         if len(self.requests) == 0:
             if self.proxy:
-                proxy = self.proxies.pop()
-                logging.debug(f"using proxy {proxy}")
-                req = TwitterRequest(proxy=proxy)
+                req = TwitterRequest(proxy=self.proxies)
             else:
                 req = TwitterRequest()
         else:

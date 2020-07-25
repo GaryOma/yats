@@ -151,7 +151,7 @@ class Connector:
         try:
             data, cursor = request.get_tweets_request(payload)
         except TypeError:
-            request.to_file("error_request.json")
+            # request.to_file("error_request.json")
             exit(0)
         logging.debug("request taken")
         new_tweets = TweetSet(data)

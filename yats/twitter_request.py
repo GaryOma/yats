@@ -114,30 +114,35 @@ class TwitterRequest(Request):
         self.get(user_url, headers=headers, params=payload)
 
     def get_tweets_request(self, payload):
-        self._get_connection_infos()
-        headers = {
-            "authorization": f"Bearer {self.token_bearer}",
-            "x-csrf-token": "dbfeef183c6a3f1f4f1609aa22f3b379",
-            "x-guest-token": self.token_guest
-        }
-        if "userId" in payload.keys():
-            url = f"{self.url_timeline}{payload['userId']}.json"
-        elif "q" in payload.keys():
-            url = self.url_search
-        logging.debug(f"get request {url}")
-        self.get(url,
-                 params=payload,
-                 headers=headers)
-        data = self.body["globalObjects"]
-        cursor = self._get_cursor(self.body["timeline"])
-        rate_limit_header = self.header("x-rate-limit-remaining")
-        if rate_limit_header is None:
-            return data, cursor
-        rate_limit = int(rate_limit_header)
-        if rate_limit == 0:
-            print("ur' fucked")
-        elif rate_limit < 10:
-            logging.warning(f"WARNING, rate-limit = {rate_limit}")
-            logging.debug("Refreshing now")
-            self._get_initial_request()
+        request_done = False
+        while not request_done:
+            self._get_connection_infos()
+            headers = {
+                "authorization": f"Bearer {self.token_bearer}",
+                "x-csrf-token": "dbfeef183c6a3f1f4f1609aa22f3b379",
+                "x-guest-token": self.token_guest
+            }
+            if "userId" in payload.keys():
+                url = f"{self.url_timeline}{payload['userId']}.json"
+            elif "q" in payload.keys():
+                url = self.url_search
+            logging.debug(f"get request {url}")
+            request_done = self.get(url,
+                                    params=payload,
+                                    headers=headers)
+            if not request_done:
+                self.token_guest = None
+                continue
+            data = self.body["globalObjects"]
+            cursor = self._get_cursor(self.body["timeline"])
+            rate_limit_header = self.header("x-rate-limit-remaining")
+            if rate_limit_header is None:
+                return data, cursor
+            rate_limit = int(rate_limit_header)
+            if rate_limit == 0:
+                print("ur' fucked")
+            elif rate_limit < 10:
+                logging.warning(f"WARNING, rate-limit = {rate_limit}")
+                logging.debug("Refreshing now")
+                self._get_initial_request()
         return data, cursor

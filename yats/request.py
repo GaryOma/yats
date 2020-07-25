@@ -32,9 +32,14 @@ class Request:
             self.recreate_connection(host, reset_proxy=True)
         if self.proxy is not None:
             # self.https.set_tunnel(host)
-            self.recreate_connection(host)
+            # self.recreate_connection(host)
             logging.debug("setting tunnel")
-            self.https.set_tunnel(host, port=443, headers=headers)
+            try:
+                self.https.set_tunnel(host, port=443, headers=headers)
+            except RuntimeError:
+                logging.error("Runtime error, refreshing")
+                self.recreate_connection(host)
+                self.https.set_tunnel(host, port=443, headers=headers)
             logging.debug("tunnel set")
             # self.https.set_tunnel(host, port=443)
         else:
@@ -51,25 +56,31 @@ class Request:
                     self.https.request(type, path, headers=headers)
             except http.client.CannotSendRequest:
                 logging.error("Cannot send request, refreshing connection")
-                self.recreate_connection(host)
-                continue
+                # self.recreate_connection(host)
+                self.recreate_connection(host, reset_proxy=True)
+                return False
             except socket.timeout:
                 logging.error("timeout while sending request, refreshing")
                 # self.recreate_connection(host)
                 continue
             except ConnectionResetError:
                 logging.error("connection refused, recreating")
-                continue
+                return False
             except OSError:
                 logging.error("OSError")
+                # self.https.close()
                 self.recreate_connection(host, reset_proxy=True)
-                continue
+                # self.recreate_connection(host)
+                return False
             # parse the response
             try:
                 response = self.https.getresponse()
             except socket.timeout:
                 logging.error("timeout while reading response, refreshing")
                 # self.recreate_connection(host)
+                continue
+            except http.client.ResponseNotReady:
+                logging.error("Response not ready, continue")
                 continue
             logging.debug(f"response status {response.status}")
             content_type = self._parse_content_type(
@@ -85,6 +96,7 @@ class Request:
                 continue
         logging.debug("body sucessfully read")
         self.https.close()
+        return True
 
     def recreate_connection(self, host, reset_proxy=False):
         if hasattr(self, "https"):
@@ -92,6 +104,8 @@ class Request:
         if self.proxy is not None:
             if reset_proxy:
                 logging.debug("resetting the proxy")
+                if self.proxy.empty():
+                    logging.critical("EMPTY PROXY QUEUE")
                 proxy = self.proxy.get()
                 self.current_proxy = proxy
             else:
@@ -115,7 +129,7 @@ class Request:
         if params is not None:
             payload = urllib.parse.urlencode(params)
             path += f"?{payload}"
-        self._send("GET", url_parsed.netloc, path, headers)
+        return self._send("GET", url_parsed.netloc, path, headers)
 
     def header(self, name):
         return self.response.getheader(name)

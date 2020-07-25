@@ -40,6 +40,7 @@ class Request:
                 logging.error("Runtime error, refreshing")
                 self.recreate_connection(host)
                 self.https.set_tunnel(host, port=443, headers=headers)
+                logging.info("Runtime error, validated")
             logging.debug("tunnel set")
             # self.https.set_tunnel(host, port=443)
         else:
@@ -58,6 +59,7 @@ class Request:
                 logging.error("Cannot send request, refreshing connection")
                 # self.recreate_connection(host)
                 self.recreate_connection(host, reset_proxy=True)
+                logging.debug("quitting the send")
                 return False
             except socket.timeout:
                 logging.error("timeout while sending request, refreshing")
@@ -103,10 +105,11 @@ class Request:
             self.https.close()
         if self.proxy is not None:
             if reset_proxy:
-                logging.debug("resetting the proxy")
+                logging.info("resetting the proxy")
                 if self.proxy.empty():
                     logging.critical("EMPTY PROXY QUEUE")
                 proxy = self.proxy.get()
+                logging.debug(f"new proxy from queue {proxy}")
                 self.current_proxy = proxy
             else:
                 proxy = self.current_proxy
@@ -115,6 +118,7 @@ class Request:
                 proxy[0],
                 proxy[1],
                 timeout=DEFAULT_TIMEOUT)
+            logging.info("connection resetted")
             # self.https.set_debuglevel(1000)
         else:
             url_parsed = urllib.parse.urlparse(host)
@@ -129,7 +133,9 @@ class Request:
         if params is not None:
             payload = urllib.parse.urlencode(params)
             path += f"?{payload}"
-        return self._send("GET", url_parsed.netloc, path, headers)
+        ret = self._send("GET", url_parsed.netloc, path, headers)
+        logging.debug(f"return from the send {ret}")
+        return ret
 
     def header(self, name):
         return self.response.getheader(name)

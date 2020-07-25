@@ -55,7 +55,7 @@ class TwitterRequest(Request):
         logging.debug("reading token")
         self.token_guest = re.search(r"gt=(\w+)",
                                      self.body).group(1)
-        logging.debug("token " + self.token_guest)
+        logging.info("token " + self.token_guest)
         self.main_js = re.search(r"https://abs.twimg.com/responsive-web/"
                                  r"web(?:_legacy)?/"
                                  r"(main.(?:.*?)\.js)",
@@ -114,6 +114,8 @@ class TwitterRequest(Request):
 
     def get_tweets_request(self, payload):
         request_done = False
+        if "q" in payload.keys():
+            logging.info(f"getting {payload['q']}")
         while not request_done:
             self._get_connection_infos()
             headers = {
@@ -129,8 +131,10 @@ class TwitterRequest(Request):
             request_done = self.get(url,
                                     params=payload,
                                     headers=headers)
+            logging.debug("returned from the get {request_done}")
             if not request_done:
                 self.token_guest = None
+                logging.info("request failed, resetting token guest")
                 continue
             data = self.body["globalObjects"]
             cursor = self._get_cursor(self.body["timeline"])

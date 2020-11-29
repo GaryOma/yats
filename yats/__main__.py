@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import logging
 from datetime import timezone
 
 from yats.connector import Connector
 from yats.custom_datetime import CustomDateTime as datetime
+from yats.logging_helper import set_logging_level
 
 
 def main():
@@ -55,26 +55,7 @@ def main():
         verbosity_level = -1
     else:
         verbosity_level = args.verbosity
-    logging_mode = {
-        3: logging.NOTSET,
-        2: logging.INFO,
-        1: logging.CRITICAL,
-        0: logging.CRITICAL,
-        -1: logging.CRITICAL
-    }
-    logger = logging.getLogger()
-    log_formatter = logging.Formatter("%(asctime)s "
-                                      "[%(threadName)-12.12s] "
-                                      "[%(levelname)-5.5s]  "
-                                      "%(message)s",
-                                      datefmt='%H:%M:%S',)
-    logging_level = logging_mode[verbosity_level]
-    print(logging_level)
-    console_handler = logging.StreamHandler()
-    # console_handler.setLevel(logging_level)
-    console_handler.setFormatter(log_formatter)
-    logger.addHandler(console_handler)
-    logger.setLevel(logging_level)
+    set_logging_level(verbosity_level)
     if args.timeline:
         tweets = con.get_tweets_timeline(args.query)
     else:

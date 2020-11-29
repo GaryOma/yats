@@ -57,7 +57,7 @@ class TwitterRequest(Request):
                                      self.body).group(1)
         logging.info("token " + self.token_guest)
         self.main_js = re.search(r"https://abs.twimg.com/responsive-web/"
-                                 r"web(?:_legacy)?/"
+                                 r"(?:client-)web(?:_legacy)?/"
                                  r"(main.(?:.*?)\.js)",
                                  self.body).group(0)
 

@@ -20,7 +20,7 @@ TOKEN_BEARER = ("AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs"
 
 class TwitterRequest(Request):
 
-    def __init__(self, fast_mode=True):
+    def __init__(self, fast_mode=False):
         if fast_mode:
             self.graphql_ext = USER_INFO_QL_ID
             self.token_bearer = TOKEN_BEARER
@@ -52,14 +52,15 @@ class TwitterRequest(Request):
         self.token_guest = re.search(r"gt=(\w+)",
                                      self.body).group(1)
         self.main_js = re.search(r"https://abs.twimg.com/responsive-web/"
-                                 r"(?:client-)web(?:_legacy)?/"
+                                 r"(?:client-)web(?:-legacy)?/"
                                  r"(main.(?:.*?)\.js)",
                                  self.body).group(0)
 
     def _get_main_js_page(self):
         logging.debug("get the token_bearer and graphql_ext")
         self.get(self.main_js)
-        self.token_bearer = re.search(r's=\"([a-zA-Z0-9+%]{10,}?)\"',
+        self.token_bearer = re.search(r's="auth_token",'
+                                      r'u=\"([a-zA-Z0-9+%]{15,}?)\"',
                                       self.body).group(1)
         regex = r"queryId:\"(.*?)\",operationName:\"(.*?)\""
         queries = re.findall(regex, self.body)
@@ -125,7 +126,7 @@ class TwitterRequest(Request):
         cursor = self._get_cursor(self.body["timeline"])
         rate_limit_header = self.header("x-rate-limit-remaining")
         if rate_limit_header is None:
-            return
+            return data, cursor
         rate_limit = int(rate_limit_header)
         if rate_limit == 0:
             print("ur' fucked")

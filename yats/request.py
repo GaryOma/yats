@@ -25,7 +25,6 @@ class Request:
         if content_type["app"] == "json":
             body = json.loads(raw)
         else:
-            # print(raw)
             body = raw.decode(content_type["charset"])
         return body
 
@@ -93,11 +92,8 @@ class Request:
             )
             self.response = response
             self.headers = response.getheaders()
-            self.body2 = response.read()
-            print(self.headers)
             try:
                 self.body = self._parse_body(response.read(), content_type)
-                print(self.body)
             except socket.timeout:
                 # self.recreate_connection(host)
                 logging.error("timeout while reading body, refreshing")

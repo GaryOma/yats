@@ -1,9 +1,11 @@
 import logging
+import re
 from multiprocessing import Queue
 
 from yats.twitter_request import TwitterRequest
 
 URL_PROXYSCRAPE = "https://api.proxyscrape.com/"
+URL_FREE_PROXY_LIST = "https://free-proxy-list.net"
 
 
 class RequestsHolder:
@@ -18,7 +20,9 @@ class RequestsHolder:
                 self.proxies.put(add)
 
     def _get_proxy_list(self):
-        addresses = self._get_proxyscrape_list()
+        addresses = []
+        addresses.extend(self._get_proxyscrape_list())
+        addresses.extend(self._get_free_proxy_list())
         return addresses
 
     def _get_proxyscrape_list(self, max_timeout=1000):
@@ -38,6 +42,18 @@ class RequestsHolder:
                 a = add.split(":")
                 addresses.append((a[0], int(a[1])))
         logging.info(f"fetched {len(addresses)} proxies from proxyscrape")
+        return addresses
+
+    def _get_free_proxy_list(self):
+        req = TwitterRequest()
+        req.get(URL_FREE_PROXY_LIST)
+        addresses = []
+        for add in re.findall(
+                r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:[0-9]+",
+                req.body):
+            a = add.split(":")
+            addresses.append((a[0], int(a[1])))
+        logging.info(f"fetched {len(addresses)} proxies from free-proxy-list")
         return addresses
 
     def __len__(self):

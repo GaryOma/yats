@@ -18,7 +18,6 @@ class Request:
         res = re.match(r"(?P<type>\w+?)\/(?P<app>\w+?);"
                        r"\s*charset=(?P<charset>.+)",
                        c_type)
-        print(c_type)
         return res.groupdict()
 
     def _parse_body(self, raw, content_type):
@@ -146,7 +145,6 @@ class Request:
         if params is not None:
             payload = urllib.parse.urlencode(params)
             path += f"?{payload}"
-        print(path, headers, url_parsed.netloc)
         ret = self._send("GET", url_parsed.netloc, path, headers)
         logging.debug(f"return from the send {ret}")
         return ret

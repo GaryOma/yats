@@ -10,17 +10,22 @@ URL_FREE_PROXY_LIST = "https://free-proxy-list.net"
 
 class RequestsHolder:
 
-    def __init__(self, proxy=True):
+    def __init__(self, proxy=True, proxy_list=None):
         self.requests = []
         self.proxy = proxy
         if self.proxy:
             self.proxies = Queue()
-            proxy_list = self._get_proxy_list()
+            if proxy_list is None:
+                proxy_list = self._get_proxy_list()
             for add in proxy_list:
                 self.proxies.put(add)
+        elif proxy_list is not None:
+            logging.warning(("a proxy_list was provided but "
+                             "the current mode is proxy less"))
 
     def _get_proxy_list(self):
         addresses = []
+        print("get proxy list")
         addresses.extend(self._get_proxyscrape_list())
         addresses.extend(self._get_free_proxy_list())
         return addresses

@@ -207,8 +207,10 @@ class Connector:
     def get_tweets_request(self,
                            verbosity,
                            max_round,
+                           proxy=True,
                            thread=20,
                            limit_cooldown=5,
+                           proxy_list=None,
                            **args):
         # initiating the initial task lisk for
         # the ThreadPool
@@ -224,7 +226,7 @@ class Connector:
         # object that holds the open connections
         # couldn't do it with Queues because of the SSLContext
         # not pickable :'-(
-        requests = RequestsHolder()
+        requests = RequestsHolder(proxy=proxy, proxy_list=proxy_list)
         # creation of the lock for the RequestHolder
         manager = Manager()
         lock = manager.Lock()

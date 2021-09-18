@@ -13,7 +13,6 @@ def main():
     parser = argparse.ArgumentParser(prog="yats",
                                      description="A fast Twitter scraper",
                                      epilog="yats @realdonaldtrump")
-    group = parser.add_mutually_exclusive_group()
     parser.add_argument("query", type=str,
                         help=("the query to execute using the twitter "
                               "syntax inside '' or a @username"))
@@ -39,11 +38,20 @@ def main():
     parser.add_argument("-u", "--until", default=None,
                         type=(lambda s: datetime.strptime(s, '%Y-%m-%d')),
                         help="until this date, YYYY-MM-DD")
-    group.add_argument("-v", "--verbosity", action="count", default=0,
-                       help=("verbosity level "
-                             "increase with -v or -vv or -vvv"))
-    group.add_argument("-q", "--quiet", action="store_true",
-                       help="remove all the outputs")
+    proxy = parser.add_mutually_exclusive_group()
+    proxy.add_argument("-p", "--proxy", dest="proxy", action="store_true",
+                       help=("use proxy connection (significantly slower, but "
+                             "no traffic limitation)"))
+    proxy.add_argument("-d", "--direct", dest="proxy", action="store_false",
+                       help=("use direct connection (way faster, but might "
+                             " end up with a Twitter cooldown after a while)"))
+    proxy.set_defaults(proxy=True)
+    verbosity = parser.add_mutually_exclusive_group()
+    verbosity.add_argument("-v", "--verbosity", action="count", default=0,
+                           help=("verbosity level "
+                                 "increase with -v or -vv or -vvv"))
+    verbosity.add_argument("-q", "--quiet", action="store_true",
+                           help="remove all the outputs")
     con = Connector()
     args = parser.parse_args()
     print(args)
@@ -65,7 +73,7 @@ def main():
             args.until = args.until.replace(tzinfo=timezone.utc)
         query = args.query
         query_list = ["thread", "limit_cooldown", "since", "until",
-                      "count", "max_round"]
+                      "count", "max_round", "proxy"]
         query_args = {}
         for arg in query_list:
             query_args[arg] = vars(args)[arg]

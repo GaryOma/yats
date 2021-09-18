@@ -6,6 +6,8 @@ from yats.twitter_request import TwitterRequest
 
 URL_PROXYSCRAPE = "https://api.proxyscrape.com/"
 URL_FREE_PROXY_LIST = "https://free-proxy-list.net"
+URL_GITHUB_PROXY_LIST = ("https://raw.githubusercontent.com/"
+                         "clarketm/proxy-list/master/proxy-list-raw.txt")
 
 
 class RequestsHolder:
@@ -28,6 +30,7 @@ class RequestsHolder:
         print("get proxy list")
         addresses.extend(self._get_proxyscrape_list())
         addresses.extend(self._get_free_proxy_list())
+        addresses.extend(self._get_github_proxy_list())
         return addresses
 
     def _get_proxyscrape_list(self, max_timeout=1000):
@@ -49,16 +52,27 @@ class RequestsHolder:
         logging.info(f"fetched {len(addresses)} proxies from proxyscrape")
         return addresses
 
-    def _get_free_proxy_list(self):
-        req = TwitterRequest()
-        req.get(URL_FREE_PROXY_LIST)
+    def _get_add_port_from_result(self, res):
         addresses = []
         for add in re.findall(
                 r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:[0-9]+",
-                req.body):
+                res):
             a = add.split(":")
             addresses.append((a[0], int(a[1])))
+        return addresses
+
+    def _get_free_proxy_list(self):
+        req = TwitterRequest()
+        req.get(URL_FREE_PROXY_LIST)
+        addresses = self._get_add_port_from_result(req.body)
         logging.info(f"fetched {len(addresses)} proxies from free-proxy-list")
+        return addresses
+
+    def _get_github_proxy_list(self):
+        req = TwitterRequest()
+        req.get(URL_GITHUB_PROXY_LIST)
+        addresses = self._get_add_port_from_result(req.body)
+        logging.info(f"fetched {len(addresses)} proxies from github list")
         return addresses
 
     def __len__(self):

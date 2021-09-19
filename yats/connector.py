@@ -12,6 +12,7 @@ from yats.profile import Profile
 from yats.tweet_set import TweetSet
 from yats.requests_holder import RequestsHolder
 from yats.iterable_queue import IterableQueue
+from yats.logging_helper import worker_process
 
 TWITTER_CREATION_DATE = datetime(2006, 3, 21, tzinfo=timezone.utc)
 COUNT_QUERY = 20
@@ -147,7 +148,8 @@ class Connector:
         return since, until, q
 
     def _tweet_worker(self, requests, lock, task_queue, limit_cooldown,
-                      max_round, payload):
+                      max_round, logging_queue, payload):
+        worker_process(logging_queue)
         logging.debug("taking request")
         with lock:
             request = requests.get()
@@ -216,6 +218,7 @@ class Connector:
                            thread=20,
                            limit_cooldown=5,
                            proxy_list=None,
+                           logging_queue=None,
                            **args):
         # initiating the initial task lisk for
         # the ThreadPool
@@ -250,7 +253,7 @@ class Connector:
                 for new_tweets in p.imap_unordered(
                         partial(self._tweet_worker, requests,
                                 lock, task_queue, limit_cooldown,
-                                max_round),
+                                max_round, logging_queue),
                         task_queue):
                     tweets.add(new_tweets)
                     disp_str = (

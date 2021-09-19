@@ -103,7 +103,6 @@ class Request:
                 continue
             except ssl.SSLError:
                 logging.debug("SSL error")
-                continue
             logging.debug(f"response status {response.status}")
             content_type = self._parse_content_type(
                 response.getheader("content-type")

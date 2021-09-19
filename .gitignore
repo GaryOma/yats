@@ -3,3 +3,4 @@
 /dist/
 /yats.egg-info/
 /.ipynb_checkpoints/
+*.log*

@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import multiprocessing
 from datetime import timezone
 
 from yats.connector import Connector
 from yats.custom_datetime import CustomDateTime as datetime
-from yats.logging_helper import set_logging_level
+from yats.logging_helper import set_logging_level, listener_process, listener_configurer
 
 
 def main():
@@ -63,7 +64,11 @@ def main():
         verbosity_level = -1
     else:
         verbosity_level = args.verbosity
-    set_logging_level(verbosity_level)
+    # set_logging_level(verbosity_level)
+    queue = multiprocessing.Queue(-1)
+    listener = multiprocessing.Process(target=listener_process,
+                                       args=(queue, listener_configurer))
+    listener.start()
     if args.timeline:
         tweets = con.get_tweets_timeline(args.query)
     else:
@@ -77,7 +82,8 @@ def main():
         query_args = {}
         for arg in query_list:
             query_args[arg] = vars(args)[arg]
-        tweets = con.request(query, verbosity=verbosity_level, **query_args)
+        tweets = con.request(query, verbosity=verbosity_level,
+                             logging_queue=queue, **query_args)
     print(f"writing {len(tweets)} tweets to {args.output}")
     tweets.export(args.output)
     # profile = con.profile(args.username)

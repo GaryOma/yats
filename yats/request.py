@@ -6,6 +6,7 @@ import socket
 import re
 
 DEFAULT_TIMEOUT = 15
+MAX_RETRY = 1
 
 
 class Request:
@@ -47,6 +48,7 @@ class Request:
         else:
             self.connection.host = host
         self.body = None
+        retry_number = 0
         logging.debug("entering the loop")
         while self.body is None:
             logging.debug(f"trying to send request to {host}")
@@ -56,6 +58,9 @@ class Request:
                     self.connection.request(type, path, headers=headers)
                 else:
                     self.connection.request(type, path, headers=headers)
+            except http.client.BadStatusLine:
+                logging.error("Bad status Line, retrying")
+                continue
             except http.client.CannotSendRequest:
                 logging.error("Cannot send request, refreshing connection")
                 # self.recreate_connection(host)
@@ -63,9 +68,16 @@ class Request:
                 logging.debug("quitting the send")
                 return False
             except socket.timeout:
-                logging.error("timeout while sending request, refreshing")
-                # self.recreate_connection(host)
-                continue
+                logging.error("timeout while sending request")
+                if retry_number < MAX_RETRY:
+                    retry_number += 1
+                    logging.debug(f"retrying ({retry_number}/{MAX_RETRY})")
+                    self.connection.close()
+                    self.recreate_connection(host, reset_proxy=False)
+                    continue
+                else:
+                    logging.debug("aborting")
+                    return False
             except ConnectionResetError:
                 logging.error("connection refused, recreating")
                 return False
@@ -85,6 +97,9 @@ class Request:
             except http.client.ResponseNotReady:
                 logging.error("Response not ready, continue")
                 continue
+            except http.client.RemoteDisconnected:
+                logging.error("Remote disconnected")
+                continue
             logging.debug(f"response status {response.status}")
             content_type = self._parse_content_type(
                 response.getheader("content-type")
@@ -96,6 +111,9 @@ class Request:
             except socket.timeout:
                 # self.recreate_connection(host)
                 logging.error("timeout while reading body, refreshing")
+                continue
+            except http.client.IncompleteRead:
+                logging.error("incomplete read")
                 continue
         logging.debug("body sucessfully read")
         self.connection.close()

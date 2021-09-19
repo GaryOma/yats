@@ -1,3 +1,4 @@
+from build.lib.yats import request
 import re
 import sys
 import logging
@@ -36,11 +37,15 @@ class TwitterRequest(Request):
                     return True
             return False
         else:
-            return not hasattr(self, attribute) or attribute is None
+            return not hasattr(self, attributes) or attributes is None
 
     def _get_initial_request(self):
+        request_done = False
         logging.debug(f"get initial request {TWITTER_URL}")
-        self.get(TWITTER_URL, headers=USER_AGENT)
+        while not request_done:
+            request_done = self.get(TWITTER_URL, headers=USER_AGENT)
+            if not request_done:
+                logging.debug(f"Couldn't access the {TWITTER_URL} website, refreshing")
         while re.search(r'\"x-rate-limit-remaining\":\"0\"', self.body):
             timestamp = re.search(r'\"x-rate-limit-reset\":\"(\d+)\"',
                                   self.body).group(1)
@@ -63,7 +68,11 @@ class TwitterRequest(Request):
 
     def _get_main_js_page(self):
         logging.debug("get the token_bearer and graphql_ext")
-        self.get(self.main_js)
+        request_done = False
+        while not request_done:
+            request_done = self.get(self.main_js)
+            if not request_done:
+                logging.debug(f"Couldn't access the {self.main_js} url, retrying")
         self.token_bearer = re.search(r's="auth_token",'
                                       r'u=\"([a-zA-Z0-9+%]{15,}?)\"',
                                       self.body).group(1)
@@ -145,7 +154,7 @@ class TwitterRequest(Request):
             rate_limit = int(rate_limit_header)
             if rate_limit == 0:
                 print("ur' fucked")
-            elif rate_limit < 10:
+            elif rate_limit < 2:
                 logging.warning(f"WARNING, rate-limit = {rate_limit}")
                 logging.debug("Refreshing now")
                 self._get_initial_request()

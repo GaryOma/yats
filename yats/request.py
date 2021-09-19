@@ -39,10 +39,10 @@ class Request:
             try:
                 self.connection.set_tunnel(host, port=443, headers=headers)
             except RuntimeError:
-                logging.error("Runtime error, refreshing")
+                logging.debug("Runtime error, refreshing")
                 self.recreate_connection(host)
                 self.connection.set_tunnel(host, port=443, headers=headers)
-                logging.info("Runtime error, validated")
+                logging.debug("Runtime error, validated")
             logging.debug("tunnel set")
             # self.https.set_tunnel(host, port=443)
         else:
@@ -59,16 +59,16 @@ class Request:
                 else:
                     self.connection.request(type, path, headers=headers)
             except http.client.BadStatusLine:
-                logging.error("Bad status Line, retrying")
+                logging.debug("Bad status Line, retrying")
                 continue
             except http.client.CannotSendRequest:
-                logging.error("Cannot send request, refreshing connection")
+                logging.debug("Cannot send request, refreshing connection")
                 # self.recreate_connection(host)
                 self.recreate_connection(host, reset_proxy=True)
                 logging.debug("quitting the send")
                 return False
             except socket.timeout:
-                logging.error("timeout while sending request")
+                logging.debug("timeout while sending request")
                 if retry_number < MAX_RETRY:
                     retry_number += 1
                     logging.debug(f"retrying ({retry_number}/{MAX_RETRY})")
@@ -79,10 +79,10 @@ class Request:
                     logging.debug("aborting")
                     return False
             except ConnectionResetError:
-                logging.error("connection refused, recreating")
+                logging.debug("connection refused, recreating")
                 return False
             except OSError:
-                logging.error("OSError")
+                logging.debug("OSError")
                 # self.https.close()
                 self.recreate_connection(host, reset_proxy=True)
                 # self.recreate_connection(host)
@@ -91,14 +91,14 @@ class Request:
             try:
                 response = self.connection.getresponse()
             except socket.timeout:
-                logging.error("timeout while reading response, refreshing")
+                logging.debug("timeout while reading response, refreshing")
                 # self.recreate_connection(host)
                 continue
             except http.client.ResponseNotReady:
-                logging.error("Response not ready, continue")
+                logging.debug("Response not ready, continue")
                 continue
             except http.client.RemoteDisconnected:
-                logging.error("Remote disconnected")
+                logging.debug("Remote disconnected")
                 continue
             logging.debug(f"response status {response.status}")
             content_type = self._parse_content_type(
@@ -110,10 +110,10 @@ class Request:
                 self.body = self._parse_body(response.read(), content_type)
             except socket.timeout:
                 # self.recreate_connection(host)
-                logging.error("timeout while reading body, refreshing")
+                logging.debug("timeout while reading body, refreshing")
                 continue
             except http.client.IncompleteRead:
-                logging.error("incomplete read")
+                logging.debug("incomplete read")
                 continue
         logging.debug("body sucessfully read")
         self.connection.close()
@@ -124,7 +124,7 @@ class Request:
             self.connection.close()
         if self.proxy is not None:
             if reset_proxy:
-                logging.info("resetting the proxy")
+                logging.debug("resetting the proxy")
                 if self.proxy.empty():
                     logging.critical("EMPTY PROXY QUEUE")
                 proxy = self.proxy.get()
@@ -143,7 +143,7 @@ class Request:
                     proxy[0],
                     proxy[1],
                     timeout=DEFAULT_TIMEOUT)
-            logging.info("connection resetted")
+            logging.debug("connection resetted")
             # self.https.set_debuglevel(1000)
         else:
             url_parsed = urllib.parse.urlparse(host)

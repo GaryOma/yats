@@ -16,7 +16,6 @@ def set_logging_level(verbosity_level: int):
                                       "%(message)s",
                                       datefmt='%H:%M:%S',)
     logging_level = logging_mode[verbosity_level]
-    print(logging_level)
     console_handler = logging.StreamHandler()
     # console_handler.setLevel(logging_level)
     console_handler.setFormatter(log_formatter)

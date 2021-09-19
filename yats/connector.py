@@ -33,53 +33,58 @@ class Connector:
         profile_res = Profile(res, verbose=True)
         return profile_res
 
+    def _build_query(self,
+                     words: list = None,
+                     sentence: str = None,
+                     words_or: list = None,
+                     words_not: list = None,
+                     hashtag: str = None,
+                     from_account: str = None,
+                     to_account: str = None,
+                     mention: str = None,
+                     min_replies: int = None,
+                     min_likes: int = None,
+                     min_retweets: int = None,
+                     filter_links: bool = None,
+                     filter_replies: bool = None):
+        query = ""
+        if words is not None:
+            query = f'{" ".join(words)} '
+        if sentence is not None:
+            query += f'"{sentence}" '
+        if words_or is not None:
+            query += f'({" OR ".join(words_or)}) '
+        if words_not is not None:
+            query += f'{" ".join(["-"+x for x in words_not])} '
+        if hashtag is not None:
+            query += f'({"#"+hashtag if hashtag[0] != "#" else hashtag}) '
+        if from_account is not None:
+            query += f'(from:{from_account}) '
+        if to_account is not None:
+            query += f'(to:{to_account}) '
+        if mention is not None:
+            query += f'({mention}) '
+        if min_replies is not None:
+            query += f'min_replies:{min_replies} '
+        if min_likes is not None:
+            query += f'min_faves:{min_likes} '
+        if min_retweets is not None:
+            query += f'min_retweets:{min_retweets} '
+        if filter_links is not None and filter_links:
+            query += "-filter:links "
+        if filter_replies is not None and filter_replies:
+            query += "-filter:replies "
+        return query
+
     def _create_query(self,
                       q: str = None,
-                      words: list = None,
-                      sentence: str = None,
-                      words_or: list = None,
-                      words_not: list = None,
-                      hashtag: str = None,
-                      from_account: str = None,
-                      to_account: str = None,
-                      mention: str = None,
-                      min_replies: int = None,
-                      min_likes: int = None,
-                      min_retweets: int = None,
                       since: datetime = None,
                       until: datetime = None,
-                      filter_links: bool = None,
-                      filter_replies: bool = None):
+                      **args):
         if q is not None:
             query = f'{q} '
         else:
-            query = ""
-            if words is not None:
-                query = f'{" ".join(words)} '
-            if sentence is not None:
-                query += f'"{sentence}" '
-            if words_or is not None:
-                query += f'({" OR ".join(words_or)}) '
-            if words_not is not None:
-                query += f'{" ".join(["-"+x for x in words_not])} '
-            if hashtag is not None:
-                query += f'({"#"+hashtag if hashtag[0] != "#" else hashtag}) '
-            if from_account is not None:
-                query += f'(from:{from_account}) '
-            if to_account is not None:
-                query += f'(to:{to_account}) '
-            if mention is not None:
-                query += f'({mention}) '
-            if min_replies is not None:
-                query += f'min_replies:{min_replies} '
-            if min_likes is not None:
-                query += f'min_faves:{min_likes} '
-            if min_retweets is not None:
-                query += f'min_retweets:{min_retweets} '
-            if filter_links is not None and filter_links:
-                query += "-filter:links "
-            if filter_replies is not None and filter_replies:
-                query += "-filter:replies "
+            query = self._build_query(**args)
         if until is not None:
             query += f'until:{until.strftime("%Y-%m-%d")} '
         if since is not None:

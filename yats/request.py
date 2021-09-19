@@ -4,6 +4,7 @@ import http.client
 import json
 import socket
 import re
+import ssl
 
 DEFAULT_TIMEOUT = 15
 MAX_RETRY = 1
@@ -100,6 +101,9 @@ class Request:
             except http.client.RemoteDisconnected:
                 logging.debug("Remote disconnected")
                 continue
+            except ssl.SSLError:
+                logging.debug("SSL error")
+                continue
             logging.debug(f"response status {response.status}")
             content_type = self._parse_content_type(
                 response.getheader("content-type")
@@ -163,9 +167,7 @@ class Request:
         if params is not None:
             payload = urllib.parse.urlencode(params)
             path += f"?{payload}"
-        ret = self._send("GET", url_parsed.netloc, path, headers)
-        logging.debug(f"return from the send {ret}")
-        return ret
+        return self._send("GET", url_parsed.netloc, path, headers)
 
     def header(self, name):
         return self.response.getheader(name)

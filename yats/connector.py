@@ -70,10 +70,10 @@ class Connector:
             query += f'min_faves:{min_likes} '
         if min_retweets is not None:
             query += f'min_retweets:{min_retweets} '
-        if filter_links is not None and filter_links:
-            query += "-filter:links "
-        if filter_replies is not None and filter_replies:
-            query += "-filter:replies "
+        if filter_links is not None:
+            query += f"{'-' if filter_links else ''}filter:links "
+        if filter_replies is not None:
+            query += f"{'-' if filter_replies else ''}filter:replies "
         return query
 
     def _create_query(self,
